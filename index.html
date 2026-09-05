@@ -136,7 +136,7 @@
                   type="text"
                   autocomplete="off"
                   spellcheck="false"
-                  placeholder="https://suno.com/song/..."
+                  placeholder="https://suno.com/s/... 또는 https://suno.com/song/..."
                   class="w-full pl-11 pr-10 py-3.5 bg-slate-900/90 text-white placeholder-slate-500 text-sm sm:text-base rounded-xl border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
                 />
                 <button
@@ -158,7 +158,7 @@
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
-                <span>올바른 Suno 음원 URL 또는 UUID를 입력해 주세요.</span>
+                <span id="input-error-text">올바른 Suno 음원 URL 또는 UUID를 입력해 주세요.</span>
               </p>
             </div>
 
@@ -218,26 +218,38 @@
             <button
               type="submit"
               id="btn-generate"
-              class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-sm sm:text-base shadow-lg shadow-rose-600/30 active:scale-[0.98] transition-all duration-150 cursor-pointer"
+              class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-sm sm:text-base shadow-lg shadow-rose-600/30 active:scale-[0.98] transition-all duration-150 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-              </svg>
-              <span>공유 링크 생성 및 복사</span>
+              <span id="btn-generate-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+              </span>
+              <span id="btn-generate-text">공유 링크 생성 및 복사</span>
             </button>
           </form>
 
           <!-- 샘플 URL 클릭 버튼 및 안내 가이드 -->
           <div class="mt-5 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
             <span class="text-slate-400">샘플로 바로 테스트해보기:</span>
-            <button
-              type="button"
-              onclick="fillSampleSong()"
-              class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
-            >
-              샘플 Suno 곡 입력하기
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                onclick="fillSampleSong('short')"
+                class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
+              >
+                단축형 (/s/...)
+              </button>
+              <span class="text-slate-600">|</span>
+              <button
+                type="button"
+                onclick="fillSampleSong('full')"
+                class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
+              >
+                표준형 (/song/...)
+              </button>
+            </div>
           </div>
 
           <!-- 생성된 링크 결과 카드 (링크 생성 시 노출) -->
@@ -512,6 +524,44 @@
       const btnDomCurrent = document.getElementById('btn-dom-current');
       const btnDomPlymaster = document.getElementById('btn-dom-plymaster');
       const customDomainInput = document.getElementById('custom-domain-input');
+      const btnGenerate = document.getElementById('btn-generate');
+      const btnGenerateIcon = document.getElementById('btn-generate-icon');
+      const btnGenerateText = document.getElementById('btn-generate-text');
+      const inputErrorText = document.getElementById('input-error-text');
+
+      /**
+       * 링크 생성 버튼 로딩 애니메이션 상태 제어
+       */
+      function setGenerateButtonLoading(isLoading) {
+        if (!btnGenerate) return;
+        if (isLoading) {
+          btnGenerate.disabled = true;
+          if (btnGenerateIcon) {
+            btnGenerateIcon.innerHTML = `
+              <svg class="animate-spin w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            `;
+          }
+          if (btnGenerateText) {
+            btnGenerateText.textContent = 'Suno 단축 링크 해석 중...';
+          }
+        } else {
+          btnGenerate.disabled = false;
+          if (btnGenerateIcon) {
+            btnGenerateIcon.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+              </svg>
+            `;
+          }
+          if (btnGenerateText) {
+            btnGenerateText.textContent = '공유 링크 생성 및 복사';
+          }
+        }
+      }
 
       /**
        * Base62 <-> UUID 상호 무손실 변환 유틸
@@ -553,20 +603,47 @@
 
       /**
        * 1. 초기 라우팅 및 뷰 전환 로직
-       * ?id={uuid} 및 단축형 ?s={base62} 모두 지원
+       * ?id={uuid}, 단축형 ?s={base62}, 또는 원본 ?url={suno_url} 지원
        */
-      function initRouter() {
+      async function initRouter() {
         const urlParams = new URLSearchParams(window.location.search);
         const shortParam = urlParams.get('s');
         const idParam = urlParams.get('id');
+        const urlParam = urlParams.get('url') || urlParams.get('suno');
 
         let targetId = null;
 
         if (shortParam) {
-          // 22글자 단축 base62 검증 및 복원
+          // 1. 22자리 무손실 압축 Base62 디코딩
           targetId = base62ToUuid(shortParam.trim());
+
+          // 2. 만약 Suno 원래 단축코드(예: 16자리 fo27V3FIRHDQTrmk)가 들어온 경우 서버 리졸버 호출
+          if (!targetId) {
+            try {
+              const res = await fetch(`/api/resolve-suno?url=${encodeURIComponent(shortParam.trim())}`);
+              const data = await res.json();
+              if (data.success && data.songId) {
+                targetId = data.songId;
+              }
+            } catch (e) {
+              console.warn('Short param resolve error:', e);
+            }
+          }
         } else if (idParam) {
           targetId = extractSongId(idParam);
+        } else if (urlParam) {
+          targetId = extractSongId(urlParam);
+          if (!targetId) {
+            try {
+              const res = await fetch(`/api/resolve-suno?url=${encodeURIComponent(urlParam.trim())}`);
+              const data = await res.json();
+              if (data.success && data.songId) {
+                targetId = data.songId;
+              }
+            } catch (e) {
+              console.warn('URL param resolve error:', e);
+            }
+          }
         }
 
         if (targetId) {
@@ -725,15 +802,40 @@
         }
       }
 
-      function handleGenerateShareLink(event) {
+      async function handleGenerateShareLink(event) {
         if (event) event.preventDefault();
 
-        const rawInput = sunoInput.value;
-        const extractedId = extractSongId(rawInput);
+        const rawInput = sunoInput.value ? sunoInput.value.trim() : '';
+        if (!rawInput) {
+          showInputError(true, 'Suno 음원 URL 또는 ID를 입력해 주세요.');
+          showToast('Suno 링크를 입력해 주세요.', 'error');
+          return;
+        }
+
+        // 1. 빠른 클라이언트 동기 추출 (UUID 직접 포함 또는 22자리 Base62 압축 코드인 경우 즉시 처리)
+        let extractedId = extractSongId(rawInput);
+
+        // 2. 동기 추출에 실패한 경우: Suno 단축 링크(suno.com/s/...) 또는 리디렉트 URL 백엔드 리졸버 호출
+        if (!extractedId) {
+          setGenerateButtonLoading(true);
+          try {
+            const res = await fetch(`/api/resolve-suno?url=${encodeURIComponent(rawInput)}`);
+            const data = await res.json();
+            if (data.success && data.songId) {
+              extractedId = data.songId;
+            } else if (data.error) {
+              console.warn('API resolver response:', data.error);
+            }
+          } catch (err) {
+            console.error('Resolve API fetch error:', err);
+          } finally {
+            setGenerateButtonLoading(false);
+          }
+        }
 
         if (!extractedId) {
-          showInputError(true);
-          showToast('올바른 Suno 음원 주소 또는 ID를 입력해 주세요.', 'error');
+          showInputError(true, '올바른 Suno 음원 URL 또는 UUID를 입력해 주세요.');
+          showToast('Suno 음원 주소를 확인할 수 없습니다.', 'error');
           return;
         }
 
@@ -825,8 +927,11 @@
         }
       }
 
-      function showInputError(show) {
+      function showInputError(show, message = '올바른 Suno 음원 URL 또는 UUID를 입력해 주세요.') {
         if (show) {
+          if (inputErrorText) {
+            inputErrorText.textContent = message;
+          }
           inputErrorMsg.classList.remove('hidden');
           sunoInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
         } else {
@@ -908,8 +1013,10 @@
         sunoInput.focus();
       }
 
-      function fillSampleSong() {
-        const sampleUrl = 'https://suno.com/song/0016d8de-dd43-4a19-a45e-721ea229120e';
+      function fillSampleSong(type = 'short') {
+        const sampleUrl = type === 'short'
+          ? 'https://suno.com/s/fo27V3FIRHDQTrmk'
+          : 'https://suno.com/song/0016d8de-dd43-4a19-a45e-721ea229120e';
         sunoInput.value = sampleUrl;
         btnClearInput.classList.remove('hidden');
         showInputError(false);
