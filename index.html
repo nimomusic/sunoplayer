@@ -310,7 +310,7 @@
           class="hidden bg-slate-800/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-player transition-all duration-300"
         >
           <!-- 플레이어 상단 헤더 -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-700/60">
+          <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-700/60">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -319,19 +319,13 @@
                   <circle cx="18" cy="16" r="3"></circle>
                 </svg>
               </div>
-              <div>
-                <h2 class="text-sm sm:text-base font-bold text-white tracking-tight leading-none flex items-center gap-1.5">
-                  <span>Suno 공식 임베드 플레이어</span>
-                  <span id="tier-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">1단계: 기본 임베드</span>
-                </h2>
-                <p class="text-[11px] text-slate-400 leading-tight mt-1">
-                  프롬프트 노출 없는 순수 음원 감상
-                </p>
-              </div>
+              <h2 class="text-sm sm:text-base font-bold text-white tracking-tight leading-none">
+                Suno 독립 팝업 플레이어
+              </h2>
             </div>
 
             <!-- 플레이어 도구 모음 (현재 링크 복사 & 공유) -->
-            <div class="flex items-center gap-1.5 self-end sm:self-auto">
+            <div class="flex items-center gap-1.5">
               <button
                 type="button"
                 onclick="copyCurrentUrl()"
@@ -347,117 +341,77 @@
             </div>
           </div>
 
-          <!-- 다중 재생 보장 시스템: 이중 삼중 재생 대책 선택 컨트롤러 (1단계 / 2단계 / 3단계) -->
-          <div class="mb-3.5 p-2.5 bg-slate-900/90 rounded-xl border border-slate-700/70">
-            <div class="flex items-center justify-between mb-2 px-0.5">
-              <span class="text-[11px] font-semibold text-slate-200 flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          <!-- 붉은 색 부분: 독립 팝업 플레이어 메인 영역 -->
+          <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950/90 border border-slate-700/80 p-6 flex flex-col items-center justify-center text-center shadow-2xl min-h-[380px] sm:min-h-[400px]">
+            <!-- 배경 블러 앰비언트 글로우 -->
+            <div id="popup-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-20 blur-3xl scale-125 pointer-events-none transition-all duration-700"></div>
+
+            <!-- 앨범 커버 아트 (클릭 시 팝업 열기) -->
+            <div class="relative z-10 mb-4 cursor-pointer group" onclick="openMiniPlayerPopup()" title="클릭하여 재생">
+              <div class="w-40 h-40 sm:w-44 sm:h-44 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/70 bg-slate-900 relative">
+                <img
+                  id="popup-cover-img"
+                  src=""
+                  alt="Album Cover"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <!-- 호버/포커스 오버레이 플레이 버튼 -->
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                  <div class="w-13 h-13 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 곡 제목 및 아티스트 정보 -->
+            <div class="relative z-10 max-w-sm mb-5 px-2">
+              <h3 id="popup-song-title" class="text-lg sm:text-xl font-bold text-white tracking-tight truncate">
+                음원 정보를 불러오는 중...
+              </h3>
+              <p id="popup-song-artist" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
+                Suno Creator
+              </p>
+            </div>
+
+            <!-- 대형 독립 팝업 플레이어 실행 버튼 -->
+            <div class="relative z-10 w-full max-w-xs space-y-2.5">
+              <button
+                type="button"
+                id="btn-launch-popup"
+                onclick="openMiniPlayerPopup()"
+                class="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-sm sm:text-base shadow-lg shadow-rose-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                이중·삼중 재생 대책 (오류 발생 시 다음 단계 클릭)
-              </span>
-              <span class="text-[10px] text-slate-400">다중 재생 보장</span>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-1.5 text-xs">
-              <!-- 1단계: 공식 임베드 (기본) -->
-              <button
-                type="button"
-                id="btn-tier-1"
-                onclick="applyPlaybackTier(1)"
-                class="py-2 px-1.5 rounded-lg font-semibold transition-all flex flex-col items-center justify-center gap-0.5 bg-rose-500 text-white shadow-md shadow-rose-500/30 cursor-pointer"
-              >
-                <span class="text-[11px] leading-tight flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                  1단계
+                <span id="btn-launch-popup-text">독립 팝업 플레이어로 감상하기</span>
+              </button>
+
+              <!-- 상태 배너 & 새 탭에서 열기 -->
+              <div class="flex items-center justify-center gap-2.5 text-[11px] text-slate-400">
+                <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span id="popup-status-text">독립 팝업 플레이어 준비됨</span>
                 </span>
-                <span class="text-[10px] opacity-95 leading-tight">공식 임베드</span>
-              </button>
-
-              <!-- 2단계: 캐시 재설정 (우회) -->
-              <button
-                type="button"
-                id="btn-tier-2"
-                onclick="applyPlaybackTier(2)"
-                class="py-2 px-1.5 rounded-lg font-medium transition-all flex flex-col items-center justify-center gap-0.5 bg-slate-800 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-slate-700 cursor-pointer"
-              >
-                <span class="text-[11px] leading-tight flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                  2단계
-                </span>
-                <span class="text-[10px] text-slate-400 leading-tight">캐시 재설정</span>
-              </button>
-
-              <!-- 3단계: 팝업 플레이어 (100% 보장) -->
-              <button
-                type="button"
-                id="btn-tier-3"
-                onclick="applyPlaybackTier(3)"
-                class="py-2 px-1.5 rounded-lg font-medium transition-all flex flex-col items-center justify-center gap-0.5 bg-slate-800 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-slate-700 cursor-pointer"
-              >
-                <span class="text-[11px] leading-tight flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  3단계
-                </span>
-                <span class="text-[10px] text-slate-400 leading-tight">팝업 플레이어</span>
-              </button>
+                <span class="text-slate-600">•</span>
+                <button
+                  type="button"
+                  onclick="openSunoDirect()"
+                  class="hover:text-slate-200 underline underline-offset-2 transition-colors cursor-pointer inline-flex items-center gap-1"
+                  title="Suno 원본 페이지 새 탭 열기"
+                >
+                  <span>새 탭 열기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
-
-          <!-- 스마트 안내 배너 (현재 재생 상태 및 단계별 가이드) -->
-          <div id="tier-help-banner" class="mb-3 p-2.5 rounded-xl bg-slate-900/70 border border-slate-700/60 text-slate-300 text-xs flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 truncate">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              <span id="tier-status-text" class="truncate text-[11px]">Suno 공식 임베드 로딩 중... (에러 발생 시 2단계 또는 3단계 클릭)</span>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onclick="openSunoDirect()"
-                class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 border border-slate-600 transition-colors inline-flex items-center gap-1 cursor-pointer"
-                title="Suno 원본 곡 페이지 새 탭 열기"
-              >
-                <span>새 탭 열기</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Suno 공식 임베드 Iframe 플레이어 컨테이너 -->
-          <div id="iframe-container" class="relative w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-700/80 min-h-[380px] sm:min-h-[400px] flex items-center justify-center">
-            <!-- 로딩 인디케이터 -->
-            <div id="iframe-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-3 z-0">
-              <svg class="animate-spin h-8 w-8 text-rose-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p id="loading-text" class="text-xs font-medium">Suno 공식 임베드 플레이어를 불러오는 중...</p>
-            </div>
-          </div>
-
-          <!-- 3단계 팝업 활성화 가이드 (3단계 팝업 모드 선택 시 표시) -->
-          <div id="popup-active-guide" class="hidden mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              <span>브라우저 쿠키 제약 없는 독립 팝업 플레이어가 실행되었습니다.</span>
-            </div>
-            <button
-              type="button"
-              onclick="openMiniPlayerPopup()"
-              class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[11px] transition-colors cursor-pointer"
-            >
-              팝업 다시 열기
-            </button>
           </div>
 
           <!-- 플레이어 하단: 무료 스트리밍 링크 (가운데 정렬) -->
@@ -547,7 +501,6 @@
       const resultBox = document.getElementById('result-box');
       const generatedLinkInput = document.getElementById('generated-link-input');
       const linkTypeLabel = document.getElementById('link-type-label');
-      const iframeContainer = document.getElementById('iframe-container');
       const toastNotification = document.getElementById('toast-notification');
       const toastText = document.getElementById('toast-text');
       const toastIcon = document.getElementById('toast-icon');
@@ -704,197 +657,117 @@
       function renderGeneratorMode() {
         modePlayer.classList.add('hidden');
         modeGenerator.classList.remove('hidden');
-        
-        // 로딩 타이머 및 기존 iframe 정리
-        if (tierLoadingTimeout) {
-          clearTimeout(tierLoadingTimeout);
-          tierLoadingTimeout = null;
-        }
-
-        const existingIframe = iframeContainer ? iframeContainer.querySelector('iframe') : null;
-        if (existingIframe) {
-          existingIframe.remove();
-        }
+        currentSongId = '';
         
         setTimeout(() => {
           if (sunoInput) sunoInput.focus();
         }, 100);
       }
 
-      // 재생 단계 관리 상태
-      let currentTier = 1;
-      let tierLoadingTimeout = null;
-
       /**
-       * 이중·삼중 재생 대책 단계 적용 (1단계: 공식 임베드 | 2단계: 캐시 재설정 | 3단계: 팝업 플레이어)
+       * 플레이어 감상 모드 UI 활성화 (독립 팝업 플레이어 전용)
        */
-      function applyPlaybackTier(tier) {
-        if (!currentSongId) return;
-        currentTier = tier;
-
-        const btn1 = document.getElementById('btn-tier-1');
-        const btn2 = document.getElementById('btn-tier-2');
-        const btn3 = document.getElementById('btn-tier-3');
-        const tierBadge = document.getElementById('tier-badge');
-        const statusText = document.getElementById('tier-status-text');
-        const popupGuide = document.getElementById('popup-active-guide');
-
-        const inactiveBtn = 'py-2 px-1.5 rounded-lg font-medium transition-all flex flex-col items-center justify-center gap-0.5 bg-slate-800 text-slate-300 hover:bg-slate-700/80 hover:text-white border border-slate-700 cursor-pointer';
-        const activeBtn = (bgClass) => `py-2 px-1.5 rounded-lg font-semibold transition-all flex flex-col items-center justify-center gap-0.5 ${bgClass} text-white shadow-md cursor-pointer`;
-
-        if (btn1) btn1.className = tier === 1 ? activeBtn('bg-rose-500 shadow-rose-500/30') : inactiveBtn;
-        if (btn2) btn2.className = tier === 2 ? activeBtn('bg-amber-500 shadow-amber-500/30') : inactiveBtn;
-        if (btn3) btn3.className = tier === 3 ? activeBtn('bg-emerald-600 shadow-emerald-500/30') : inactiveBtn;
-
-        if (popupGuide) popupGuide.classList.add('hidden');
-
-        if (tier === 1) {
-          if (tierBadge) {
-            tierBadge.textContent = '1단계: 기본 임베드';
-            tierBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30';
-          }
-          if (statusText) {
-            statusText.textContent = 'Suno 공식 임베드 로딩 중... (오류 발생 시 2단계 또는 3단계 클릭)';
-          }
-          mountIframePlayer(currentSongId, false);
-        } else if (tier === 2) {
-          if (tierBadge) {
-            tierBadge.textContent = '2단계: 캐시 재설정';
-            tierBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30';
-          }
-          if (statusText) {
-            statusText.textContent = '2단계: 캐시와 세션을 초기화하여 임베드를 다시 로드했습니다.';
-          }
-          mountIframePlayer(currentSongId, true);
-          showToast('2단계: 캐시를 재설정하여 다시 로드합니다.', 'info');
-        } else if (tier === 3) {
-          if (tierBadge) {
-            tierBadge.textContent = '3단계: 팝업 플레이어';
-            tierBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-          }
-          if (statusText) {
-            statusText.textContent = '3단계: 브라우저 쿠키 제약 없는 독립 팝업 플레이어로 실행 중';
-          }
-          if (popupGuide) popupGuide.classList.remove('hidden');
-          openMiniPlayerPopup();
-        }
-      }
-
-      /**
-       * 플레이어 감상 모드 UI 활성화
-       */
-      function renderPlayerMode(songId) {
+      async function renderPlayerMode(songId) {
         currentSongId = songId;
         modeGenerator.classList.add('hidden');
         modePlayer.classList.remove('hidden');
 
-        // 기본 1단계(공식 임베드)로 안전하게 마운트
-        applyPlaybackTier(1);
+        const coverImg = document.getElementById('popup-cover-img');
+        const bgBlur = document.getElementById('popup-bg-blur');
+        const titleEl = document.getElementById('popup-song-title');
+        const artistEl = document.getElementById('popup-song-artist');
+        const btnText = document.getElementById('btn-launch-popup-text');
+        const statusText = document.getElementById('popup-status-text');
+
+        // 기본값 설정 (Suno CDN 구조)
+        const defaultCover = `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
+        if (coverImg) coverImg.src = defaultCover;
+        if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
+        if (titleEl) titleEl.textContent = '음원 정보를 불러오는 중...';
+        if (artistEl) artistEl.textContent = 'Suno Creator';
+        if (btnText) btnText.textContent = '독립 팝업 플레이어로 감상하기';
+        if (statusText) statusText.textContent = '독립 팝업 플레이어 대기 중';
+
+        // 메타데이터 비동기 로드
+        let meta = songDataCache[songId];
+        if (!meta) {
+          try {
+            const res = await fetch(`/api/resolve-suno?url=${encodeURIComponent(songId)}`);
+            const data = await res.json();
+            if (data.success) {
+              meta = data;
+              songDataCache[songId] = data;
+            }
+          } catch (e) {
+            console.warn('Metadata fetch failed:', e);
+          }
+        }
+
+        if (meta) {
+          if (meta.title && titleEl) titleEl.textContent = meta.title;
+          if (meta.artist && artistEl) artistEl.textContent = meta.artist;
+          if (meta.imageUrl && coverImg) {
+            coverImg.src = meta.imageUrl;
+            if (bgBlur) bgBlur.style.backgroundImage = `url('${meta.imageUrl}')`;
+          }
+        } else {
+          if (titleEl) titleEl.textContent = `Suno Track (${songId.slice(0, 8)})`;
+        }
+
+        // 페이지 접속 시 독립 팝업 플레이어 자동 오픈 시도
+        openMiniPlayerPopup(false);
       }
 
       /**
-       * Suno 공식 Iframe 마운트 (캐시 우회 옵션 지원)
+       * 독립 팝업 플레이어 열기 (브라우저 쿠키 제약 없는 최상위 창 실행)
+       * @param {boolean} isUserClick 사용자가 직접 클릭해서 열었는지 여부
        */
-      function mountIframePlayer(songId, forceBypassCache = false) {
-        if (!iframeContainer) return;
-
-        if (tierLoadingTimeout) {
-          clearTimeout(tierLoadingTimeout);
-          tierLoadingTimeout = null;
-        }
-
-        const existingIframe = iframeContainer.querySelector('iframe');
-        if (existingIframe) {
-          existingIframe.remove();
-        }
-
-        const loadingIndicator = document.getElementById('iframe-loading');
-        const loadingText = document.getElementById('loading-text');
-        if (loadingIndicator) {
-          loadingIndicator.style.display = 'flex';
-          if (loadingText) {
-            loadingText.textContent = forceBypassCache 
-              ? '캐시를 초기화하여 플레이어를 다시 불러오는 중...' 
-              : 'Suno 공식 임베드 플레이어를 불러오는 중...';
-          }
-        }
-
-        const iframe = document.createElement('iframe');
-        const baseEmbedUrl = `https://suno.com/embed/${encodeURIComponent(songId)}`;
-        const embedUrl = forceBypassCache 
-          ? `${baseEmbedUrl}?cb=${Date.now()}&bypass=1` 
-          : baseEmbedUrl;
-
-        iframe.src = embedUrl;
-        iframe.width = '100%';
-        iframe.height = '400';
-        iframe.frameBorder = '0';
-        iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; web-share';
-        iframe.referrerPolicy = 'origin-when-cross-origin';
-        iframe.className = 'relative z-10 w-full h-[380px] sm:h-[400px] rounded-xl transition-opacity duration-300 opacity-0';
-        
-        iframe.onload = () => {
-          iframe.classList.remove('opacity-0');
-          iframe.classList.add('opacity-100');
-          if (loadingIndicator) {
-            loadingIndicator.style.display = 'none';
-          }
-          if (tierLoadingTimeout) {
-            clearTimeout(tierLoadingTimeout);
-            tierLoadingTimeout = null;
-          }
-          const statusText = document.getElementById('tier-status-text');
-          if (statusText) {
-            statusText.textContent = '공식 임베드가 준비되었습니다. 중앙 재생 버튼을 누르세요.';
-          }
-        };
-
-        iframe.onerror = () => {
-          if (loadingIndicator) {
-            loadingIndicator.style.display = 'none';
-          }
-          const statusText = document.getElementById('tier-status-text');
-          if (statusText) {
-            statusText.textContent = '임베드 차단 감지: 상단의 [2단계] 또는 [3단계 팝업]을 눌러주세요.';
-          }
-          showToast('임베드 로딩 실패 시 [2단계] 또는 [3단계 팝업]을 이용해 주세요.', 'error');
-        };
-
-        iframeContainer.appendChild(iframe);
-
-        // 5초 이상 로딩이 지속되거나 auth 리디렉션 지연 시 스마트 안내 전환
-        tierLoadingTimeout = setTimeout(() => {
-          const statusText = document.getElementById('tier-status-text');
-          if (statusText && loadingIndicator && loadingIndicator.style.display !== 'none') {
-            statusText.textContent = '로딩이 지연되나요? auth 에러 시 상단 [2단계 캐시 재설정] 또는 [3단계 팝업]을 누르세요.';
-          }
-        }, 5000);
-      }
-
-      /**
-       * 3단계 대책: 독립 팝업 플레이어 열기 (브라우저 서드파티 쿠키 차단 완전 우회)
-       */
-      function openMiniPlayerPopup() {
+      function openMiniPlayerPopup(isUserClick = true) {
         if (!currentSongId) return;
         const embedUrl = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
         
-        // 팝업 윈도우 생성 (최상위 컨텍스트이므로 Clerk 쿠키 리디렉트 문제 100% 없음)
+        // 화면 정중앙 위치 계산
+        const width = 540;
+        const height = 400;
+        const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+        const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+
         const popup = window.open(
           embedUrl,
           'SunoMiniPlayer',
-          'width=540,height=360,left=150,top=150,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
+          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`
         );
 
+        const btnText = document.getElementById('btn-launch-popup-text');
+        const statusBadge = document.getElementById('popup-status-badge');
+        const statusText = document.getElementById('popup-status-text');
+
         if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          showToast('브라우저에서 팝업이 차단되었습니다. 새 탭으로 엽니다.', 'error');
-          window.open(embedUrl, '_blank');
+          // 브라우저 팝업 차단 정책으로 차단된 경우
+          if (isUserClick) {
+            showToast('팝업이 차단되어 새 탭으로 플레이어를 엽니다.', 'error');
+            window.open(embedUrl, '_blank');
+          } else {
+            showToast('중앙의 버튼을 눌러 독립 팝업 플레이어를 실행하세요.', 'info');
+            if (btnText) btnText.textContent = '클릭하여 팝업 플레이어 열기';
+            const launchBtn = document.getElementById('btn-launch-popup');
+            if (launchBtn) launchBtn.classList.add('animate-pulse');
+          }
         } else {
-          showToast('3단계: 독립 팝업 플레이어로 실행되었습니다.', 'success');
+          popup.focus();
+          if (btnText) btnText.textContent = '팝업 플레이어 다시 열기';
+          if (statusText) statusText.textContent = '독립 팝업 플레이어 실행 중';
+          const launchBtn = document.getElementById('btn-launch-popup');
+          if (launchBtn) launchBtn.classList.remove('animate-pulse');
+
+          if (isUserClick) {
+            showToast('독립 팝업 플레이어가 실행되었습니다.', 'success');
+          }
         }
       }
 
       /**
-       * Suno 원본 페이지 새 탭에서 열기 (비상 대책)
+       * Suno 원본 페이지 새 탭에서 열기
        */
       function openSunoDirect() {
         if (!currentSongId) return;
