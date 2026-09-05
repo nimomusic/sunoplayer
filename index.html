@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="ko" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Suno 즉석 플레이어 by Plymaster</title>
+    <meta name="description" content="Suno음악을 프롬프트 노출없이 빠르게 공유" />
+
+    <!-- Open Graph (OG) 소셜 미디어 메타태그 -->
+    <meta property="og:title" content="Suno 즉석 플레이어 by Plymaster" />
+    <meta property="og:description" content="Suno음악을 프롬프트 노출없이 빠르게 공유" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://github.com/nimomusic/sunoplayer/blob/main/sunoback.png" /> <!-- 여기에_실제_1200x630_이미지_URL_입력 -->
+
+    <!-- Twitter 카드 메타태그 -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Suno 즉석 플레이어 by Plymaster" />
+    <meta property="twitter:description" content="Suno음악을 프롬프트 노출없이 빠르게 공유" />
+    <meta property="twitter:image" content="https://github.com/nimomusic/sunoplayer/blob/main/sunoback.png" /> <!-- 여기에_실제_1200x630_이미지_URL_입력 -->
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'%3E%3C/path%3E%3Ccircle cx='6' cy='18' r='3'%3E%3C/circle%3E%3Ccircle cx='18' cy='16' r='3'%3E%3C/circle%3E%3C/svg%3E" />
+
+    <!-- Tailwind CSS (CDN 링크) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              suno: {
+                DEFAULT: '#f43f5e',
+                hover: '#e11d48',
+                glow: '#fda4af',
+              },
+            },
+            boxShadow: {
+              player: '0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 35px -5px rgba(244, 63, 94, 0.15)',
+              glow: '0 0 25px rgba(244, 63, 94, 0.25)',
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Pretendard WebFont -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+    <style>
+      body {
+        font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        letter-spacing: -0.015em;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 9999px;
+      }
+      @keyframes pulse-subtle {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.92; transform: scale(1.02); }
+      }
+      .animate-pulse-subtle {
+        animation: pulse-subtle 3s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white antialiased">
+    <!-- 배경 장식 글로우 효과 -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+      <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[550px] h-[550px] bg-rose-500/10 rounded-full blur-[120px]"></div>
+      <div class="absolute -bottom-32 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-500/10 rounded-full blur-[130px]"></div>
+    </div>
+
+    <!-- 메인 컨테이너 -->
+    <main id="app-container" class="flex-grow flex items-center justify-center p-4 sm:p-6 w-full">
+      <div class="w-full max-w-lg mx-auto">
+
+        <!-- 1. 링크 생성 모드 (접속 URL에 ?id= 또는 ?s= 가 없을 때) -->
+        <section
+          id="mode-generator"
+          class="hidden bg-slate-800/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-6 sm:p-8 shadow-player transition-all duration-300"
+        >
+          <!-- 헤더 영역 -->
+          <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-600 to-rose-400 text-white shadow-lg shadow-rose-500/30 mb-4 animate-pulse-subtle">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">
+              Suno 즉석 플레이어 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 align-middle ml-1">by Plymaster</span>
+            </h1>
+            <p class="text-slate-400 text-sm sm:text-base leading-relaxed break-keep">
+              Suno 음원 URL을 입력하면 공유용 플레이어 링크가 즉시 생성됩니다.
+            </p>
+          </div>
+
+          <!-- 입력 및 액션 폼 -->
+          <form id="url-form" class="space-y-4" onsubmit="handleGenerateShareLink(event)">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label for="suno-input" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Suno 곡 URL 또는 ID
+                </label>
+                <!-- 링크 단축 옵션 토글 -->
+                <div class="flex items-center gap-1.5 text-xs">
+                  <span class="text-slate-400 text-[11px]">단축형 링크(Short URL):</span>
+                  <button
+                    type="button"
+                    id="btn-toggle-short"
+                    onclick="toggleShortUrlMode()"
+                    class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30 transition-colors cursor-pointer"
+                  >
+                    ON (압축)
+                  </button>
+                </div>
+              </div>
+
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </div>
+                <input
+                  id="suno-input"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="https://suno.com/song/..."
+                  class="w-full pl-11 pr-10 py-3.5 bg-slate-900/90 text-white placeholder-slate-500 text-sm sm:text-base rounded-xl border border-slate-700/80 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200"
+                />
+                <button
+                  type="button"
+                  id="btn-clear-input"
+                  class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white transition-colors"
+                  onclick="clearInput()"
+                  title="지우기"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <p id="input-error-msg" class="hidden text-rose-400 text-xs mt-2 flex items-center gap-1.5 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>올바른 Suno 음원 URL 또는 UUID를 입력해 주세요.</span>
+              </p>
+            </div>
+
+            <!-- 커스텀 도메인 설정 옵션 (접기/펼치기) -->
+            <div class="pt-1">
+              <button
+                type="button"
+                onclick="toggleDomainSettings()"
+                class="text-[12px] text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+                <span>공유 도메인 설정 (현재 / plymaster.co.kr)</span>
+                <svg id="domain-chevron" xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transform transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              
+              <div id="domain-settings-panel" class="hidden mt-2 p-3 bg-slate-900/70 border border-slate-700/60 rounded-xl space-y-2 text-xs">
+                <div class="flex items-center justify-between text-slate-400">
+                  <span>생성 링크의 도메인 선택:</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onclick="selectBaseDomain('current')"
+                    id="btn-dom-current"
+                    class="py-1.5 px-2.5 rounded-lg border border-rose-500/50 bg-rose-500/10 text-rose-300 font-medium text-[11px] truncate text-center transition-all cursor-pointer"
+                  >
+                    현재 접속 도메인
+                  </button>
+                  <button
+                    type="button"
+                    onclick="selectBaseDomain('plymaster')"
+                    id="btn-dom-plymaster"
+                    class="py-1.5 px-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white font-medium text-[11px] truncate text-center transition-all cursor-pointer"
+                  >
+                    plymaster.co.kr
+                  </button>
+                </div>
+                <div class="mt-1">
+                  <input
+                    id="custom-domain-input"
+                    type="text"
+                    placeholder="또는 사용자 정의 도메인 (예: plymaster.co.kr)"
+                    oninput="handleCustomDomainChange()"
+                    class="w-full px-2.5 py-1.5 bg-slate-950/80 text-white placeholder-slate-500 text-[11px] rounded-lg border border-slate-800 focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 버튼: [공유 링크 생성 및 복사] -->
+            <button
+              type="submit"
+              id="btn-generate"
+              class="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-sm sm:text-base shadow-lg shadow-rose-600/30 active:scale-[0.98] transition-all duration-150 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+              </svg>
+              <span>공유 링크 생성 및 복사</span>
+            </button>
+          </form>
+
+          <!-- 샘플 URL 클릭 버튼 및 안내 가이드 -->
+          <div class="mt-5 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+            <span class="text-slate-400">샘플로 바로 테스트해보기:</span>
+            <button
+              type="button"
+              onclick="fillSampleSong()"
+              class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
+            >
+              샘플 Suno 곡 입력하기
+            </button>
+          </div>
+
+          <!-- 생성된 링크 결과 카드 (링크 생성 시 노출) -->
+          <div id="result-box" class="hidden mt-5 pt-5 border-t border-slate-700/60 transition-all duration-300">
+            <div class="p-4 bg-slate-900/90 rounded-xl border border-slate-700/80 space-y-3">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-medium">
+                <span class="flex items-center gap-1.5 text-emerald-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  <span id="link-type-label">생성된 단축 공유 링크</span>
+                </span>
+                <span class="text-[11px] text-slate-400">클립보드 복사 완료</span>
+              </div>
+
+              <!-- 축약형 디스플레이와 복사 버튼 -->
+              <div class="flex items-center gap-2">
+                <input
+                  id="generated-link-input"
+                  type="text"
+                  readonly
+                  class="flex-grow bg-slate-950/90 text-rose-300 text-xs px-3 py-2.5 rounded-lg border border-slate-800 font-mono focus:outline-none selection:bg-rose-600"
+                />
+                <button
+                  type="button"
+                  onclick="copyGeneratedLink()"
+                  class="shrink-0 px-3.5 py-2.5 bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-white rounded-lg active:scale-95 transition-all cursor-pointer flex items-center gap-1"
+                  title="링크 다시 복사"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                  </svg>
+                  복사
+                </button>
+              </div>
+
+              <!-- 원클릭 플레이어 바로가기 -->
+              <div class="pt-1">
+                <button
+                  type="button"
+                  onclick="navigateDirectToPlayer()"
+                  class="w-full py-2.5 px-4 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  지금 즉시 플레이어로 감상하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 플레이어 감상 모드 (접속 URL에 ?id= 또는 ?s= 파라미터가 있을 때) -->
+        <section
+          id="mode-player"
+          class="hidden bg-slate-800/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-player transition-all duration-300"
+        >
+          <!-- 플레이어 상단 헤더 -->
+          <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-700/60">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-sm sm:text-base font-bold text-white tracking-tight leading-none flex items-center gap-1.5">
+                  <span>Suno 즉석 플레이어</span>
+                  <span id="player-badge" class="text-[10px] font-normal px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">공식 임베드</span>
+                </h2>
+                <p class="text-[11px] text-slate-400 leading-tight mt-1">
+                  프롬프트 노출 없는 순수 음원 감상
+                </p>
+              </div>
+            </div>
+
+            <!-- 플레이어 도구 모음 (새로고침 & 공유) -->
+            <div class="flex items-center gap-1.5">
+              <!-- 플레이어 새로고침 (auth.suno.com 리디렉트 에러 해결용) -->
+              <button
+                type="button"
+                onclick="reloadPlayerIframe()"
+                class="text-xs p-2 rounded-lg bg-slate-700/70 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                title="플레이어 새로고침 (리디렉션 에러 발생 시 클릭)"
+              >
+                <svg id="icon-reload" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+              </button>
+
+              <!-- 현재 링크 복사 버튼 -->
+              <button
+                type="button"
+                onclick="copyCurrentUrl()"
+                class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="이 플레이어 링크 복사"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+                <span>공유</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 리디렉션 에러 해결 및 새 창 열기 알림 배너 -->
+          <div id="auth-help-banner" class="mb-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 truncate">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span class="truncate">Suno 쿠키/인증 에러가 발생하나요?</span>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onclick="reloadPlayerIframe()"
+                class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-200 border border-slate-600 transition-colors"
+              >
+                새로고침
+              </button>
+              <button
+                type="button"
+                id="btn-open-suno-direct"
+                onclick="openSunoDirect()"
+                class="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-[11px] font-semibold text-amber-300 border border-amber-500/40 transition-colors inline-flex items-center gap-1"
+              >
+                <span>새 탭에서 재생</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Suno 공식 임베드 Iframe 플레이어 컨테이너 -->
+          <div id="iframe-container" class="relative w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-700/80 min-h-[400px] flex items-center justify-center">
+            <!-- 로딩 인디케이터 -->
+            <div id="iframe-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-3 z-0">
+              <svg class="animate-spin h-8 w-8 text-rose-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-xs font-medium">Suno 임베드 플레이어를 불러오는 중...</p>
+            </div>
+          </div>
+
+          <!-- 플레이어 하단 대안 재생 모드 (오디오 직접 스트림) -->
+          <div id="direct-stream-box" class="mt-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/60 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+              <span class="text-slate-300">iframe 차단 시 Suno 원본 페이지로 바로 듣기</span>
+            </div>
+            <button
+              type="button"
+              onclick="openSunoDirect()"
+              class="px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <span>Suno에서 열기</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- 하단 액션 버튼: [나도 음원 공유하기] -->
+          <div class="mt-4">
+            <button
+              type="button"
+              id="btn-goto-create"
+              onclick="switchToGeneratorMode()"
+              class="w-full flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-sm sm:text-base shadow-lg shadow-rose-600/25 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>나도 음원 공유하기</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- [3. 하단 공통 고정 푸터 (필수 요구사항)] -->
+    <footer class="w-full py-5 px-4 text-center select-none border-t border-slate-800/80 bg-slate-950/40 backdrop-blur-sm">
+      <div class="max-w-md mx-auto space-y-1.5">
+        <div>
+          <a
+            id="footer-stream-link"
+            href="https://www.plymaster.co.kr/?view=pop"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-xs sm:text-sm font-medium text-slate-400 hover:text-rose-400 transition-colors inline-flex items-center gap-1.5 group py-1"
+          >
+            <span>*무료 스트리밍(Free Streamming)</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500 group-hover:text-rose-400 transition-colors group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+        </div>
+        <p class="text-[11px] text-slate-400">
+          Powered by Plymaster &copy; Suno Instant Player
+        </p>
+      </div>
+    </footer>
+
+    <!-- 알림 토스트 (Toast Message) -->
+    <div
+      id="toast-notification"
+      class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 transform opacity-0 -translate-y-4"
+    >
+      <div
+        id="toast-content"
+        class="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-slate-800/95 text-white border border-slate-700 shadow-2xl backdrop-blur-md text-sm font-medium"
+      >
+        <span id="toast-icon" class="text-rose-400 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span id="toast-text">토스트 메시지</span>
+      </div>
+    </div>
+
+    <!-- Vanilla JavaScript 동작 로직 -->
+    <script>
+      // Base62 인코딩 문자열 (UUID 무손실 단축용)
+      const B62_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      
+      // 상태 관리 변수
+      let currentSongId = '';
+      let lastGeneratedFullUrl = '';
+      let isShortUrlMode = true; // 단축 URL 기본 활성화
+      let baseDomainMode = 'current'; // 'current' | 'plymaster' | 'custom'
+      let customDomainValue = '';
+      let toastTimeout = null;
+
+      // DOM 요소 캐싱
+      const modeGenerator = document.getElementById('mode-generator');
+      const modePlayer = document.getElementById('mode-player');
+      const sunoInput = document.getElementById('suno-input');
+      const btnClearInput = document.getElementById('btn-clear-input');
+      const inputErrorMsg = document.getElementById('input-error-msg');
+      const resultBox = document.getElementById('result-box');
+      const generatedLinkInput = document.getElementById('generated-link-input');
+      const linkTypeLabel = document.getElementById('link-type-label');
+      const iframeContainer = document.getElementById('iframe-container');
+      const toastNotification = document.getElementById('toast-notification');
+      const toastText = document.getElementById('toast-text');
+      const toastIcon = document.getElementById('toast-icon');
+      const btnToggleShort = document.getElementById('btn-toggle-short');
+      const domainSettingsPanel = document.getElementById('domain-settings-panel');
+      const domainChevron = document.getElementById('domain-chevron');
+      const btnDomCurrent = document.getElementById('btn-dom-current');
+      const btnDomPlymaster = document.getElementById('btn-dom-plymaster');
+      const customDomainInput = document.getElementById('custom-domain-input');
+
+      /**
+       * Base62 <-> UUID 상호 무손실 변환 유틸
+       * 36자리 UUID -> 22자리 단축 문자열로 압축
+       */
+      function uuidToBase62(uuidStr) {
+        try {
+          const hex = uuidStr.replace(/-/g, '').toLowerCase();
+          if (hex.length !== 32) return uuidStr;
+          
+          let num = BigInt('0x' + hex);
+          let result = '';
+          while (num > 0n) {
+            const remainder = Number(num % 62n);
+            result = B62_CHARS[remainder] + result;
+            num = num / 62n;
+          }
+          return result.padStart(22, '0');
+        } catch (e) {
+          return uuidStr;
+        }
+      }
+
+      function base62ToUuid(b62Str) {
+        try {
+          let num = 0n;
+          for (let i = 0; i < b62Str.length; i++) {
+            const char = b62Str[i];
+            const val = BigInt(B62_CHARS.indexOf(char));
+            if (val < 0n) return null;
+            num = num * 62n + val;
+          }
+          const hex = num.toString(16).padStart(32, '0');
+          return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      /**
+       * 1. 초기 라우팅 및 뷰 전환 로직
+       * ?id={uuid} 및 단축형 ?s={base62} 모두 지원
+       */
+      function initRouter() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const shortParam = urlParams.get('s');
+        const idParam = urlParams.get('id');
+
+        let targetId = null;
+
+        if (shortParam) {
+          // 22글자 단축 base62 검증 및 복원
+          targetId = base62ToUuid(shortParam.trim());
+        } else if (idParam) {
+          targetId = extractSongId(idParam);
+        }
+
+        if (targetId) {
+          currentSongId = targetId;
+          renderPlayerMode(targetId);
+        } else {
+          renderGeneratorMode();
+        }
+      }
+
+      /**
+       * 링크 생성 모드 UI 활성화
+       */
+      function renderGeneratorMode() {
+        modePlayer.classList.add('hidden');
+        modeGenerator.classList.remove('hidden');
+        
+        // iframe 비우기
+        const existingIframe = iframeContainer.querySelector('iframe');
+        if (existingIframe) {
+          existingIframe.remove();
+        }
+        
+        setTimeout(() => {
+          if (sunoInput) sunoInput.focus();
+        }, 100);
+      }
+
+      /**
+       * 플레이어 감상 모드 UI 활성화
+       * Suno 임베드 및 리디렉트 충돌 방지 최적화
+       */
+      function renderPlayerMode(songId) {
+        currentSongId = songId;
+        modeGenerator.classList.add('hidden');
+        modePlayer.classList.remove('hidden');
+
+        // 기존 iframe 교체 및 로딩 표시
+        const existingIframe = iframeContainer.querySelector('iframe');
+        if (existingIframe) {
+          existingIframe.remove();
+        }
+
+        const loadingIndicator = document.getElementById('iframe-loading');
+        if (loadingIndicator) {
+          loadingIndicator.style.display = 'flex';
+        }
+
+        // iframe 생성
+        // 핵심 해결: referrerpolicy="no-referrer" 와 timestamp 쿼리를 추가하여 Clerk auth 세션 캐시 꼬임 방지
+        const iframe = document.createElement('iframe');
+        const embedUrl = `https://suno.com/embed/${encodeURIComponent(songId)}`;
+        iframe.src = embedUrl;
+        iframe.width = '100%';
+        iframe.height = '400';
+        iframe.frameBorder = '0';
+        iframe.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+        iframe.referrerPolicy = 'no-referrer';
+        iframe.className = 'relative z-10 w-full h-[400px] rounded-xl transition-opacity duration-300 opacity-0';
+        
+        iframe.onload = () => {
+          iframe.classList.remove('opacity-0');
+          iframe.classList.add('opacity-100');
+          if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+          }
+        };
+
+        iframe.onerror = () => {
+          if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+          }
+          showToast('임베드 로드 실패 시 [새 탭에서 재생]을 이용해 주세요.', 'error');
+        };
+
+        iframeContainer.appendChild(iframe);
+      }
+
+      /**
+       * 플레이어 새로고침 (auth.suno.com 리디렉션 무한루프 발생 시 리셋)
+       */
+      function reloadPlayerIframe() {
+        if (!currentSongId) return;
+        const reloadIcon = document.getElementById('icon-reload');
+        if (reloadIcon) {
+          reloadIcon.classList.add('animate-spin');
+          setTimeout(() => reloadIcon.classList.remove('animate-spin'), 800);
+        }
+
+        // iframe을 깔끔하게 다시 로드
+        renderPlayerMode(currentSongId);
+        showToast('플레이어를 새로고침했습니다.', 'success');
+      }
+
+      /**
+       * Suno 원본 페이지 새 탭에서 열기 (쿠키 제약 우회 100% 보장)
+       */
+      function openSunoDirect() {
+        if (!currentSongId) return;
+        const targetUrl = `https://suno.com/song/${currentSongId}`;
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      /**
+       * 2. 사용자 입력 처리 및 Song ID 추출 (UUID 8-4-4-4-12 또는 32자리 헥사코드)
+       */
+      function extractSongId(input) {
+        if (!input) return null;
+        const trimmed = input.trim();
+
+        // 1. 단축형 base62 문자열인 경우 복원 시도
+        if (/^[0-9a-zA-Z]{21,22}$/.test(trimmed)) {
+          const decoded = base62ToUuid(trimmed);
+          if (decoded) return decoded;
+        }
+
+        // 2. 표준 하이픈 포함 UUID (8-4-4-4-12자리)
+        const matchHyphen = trimmed.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+        if (matchHyphen) {
+          return matchHyphen[0].toLowerCase();
+        }
+
+        // 3. 하이픈 없는 32자리 16진수 포맷인 경우 표준 UUID 형식으로 변환
+        const matchPlain = trimmed.match(/\b([0-9a-fA-F]{32})\b/);
+        if (matchPlain) {
+          const raw = matchPlain[1].toLowerCase();
+          return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(16, 20)}-${raw.slice(20, 32)}`;
+        }
+
+        return null;
+      }
+
+      /**
+       * 공유 링크 빌더: 도메인 및 단축형(?s=) 또는 표준(?id=) 반영
+       */
+      function buildShareUrl(songId) {
+        let domain = window.location.origin;
+
+        if (baseDomainMode === 'plymaster') {
+          domain = 'https://www.plymaster.co.kr';
+        } else if (baseDomainMode === 'custom' && customDomainValue.trim()) {
+          let custom = customDomainValue.trim();
+          if (!custom.startsWith('http://') && !custom.startsWith('https://')) {
+            custom = 'https://' + custom;
+          }
+          domain = custom.replace(/\/+$/, '');
+        }
+
+        const path = (baseDomainMode === 'current') ? window.location.pathname : '/';
+        
+        if (isShortUrlMode) {
+          const shortCode = uuidToBase62(songId);
+          return `${domain}${path}?s=${shortCode}`;
+        } else {
+          return `${domain}${path}?id=${songId}`;
+        }
+      }
+
+      function handleGenerateShareLink(event) {
+        if (event) event.preventDefault();
+
+        const rawInput = sunoInput.value;
+        const extractedId = extractSongId(rawInput);
+
+        if (!extractedId) {
+          showInputError(true);
+          showToast('올바른 Suno 음원 주소 또는 ID를 입력해 주세요.', 'error');
+          return;
+        }
+
+        showInputError(false);
+        currentSongId = extractedId;
+
+        // 공유 링크 생성
+        const shareUrl = buildShareUrl(extractedId);
+        lastGeneratedFullUrl = shareUrl;
+
+        // 결과 박스 업데이트
+        generatedLinkInput.value = shareUrl;
+        linkTypeLabel.textContent = isShortUrlMode ? '생성된 단축 공유 링크' : '생성된 공유 링크';
+        resultBox.classList.remove('hidden');
+
+        // 클립보드 복사
+        copyTextToClipboard(shareUrl, () => {
+          showToast('공유 링크가 클립보드에 복사되었습니다!', 'success');
+        });
+      }
+
+      /**
+       * 단축 링크 모드 토글 (ON/OFF)
+       */
+      function toggleShortUrlMode() {
+        isShortUrlMode = !isShortUrlMode;
+        if (isShortUrlMode) {
+          btnToggleShort.textContent = 'ON (압축)';
+          btnToggleShort.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30 transition-colors cursor-pointer';
+        } else {
+          btnToggleShort.textContent = 'OFF (UUID)';
+          btnToggleShort.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 transition-colors cursor-pointer';
+        }
+
+        if (currentSongId) {
+          const shareUrl = buildShareUrl(currentSongId);
+          lastGeneratedFullUrl = shareUrl;
+          generatedLinkInput.value = shareUrl;
+          linkTypeLabel.textContent = isShortUrlMode ? '생성된 단축 공유 링크' : '생성된 공유 링크';
+        }
+      }
+
+      /**
+       * 도메인 설정 패널 토글
+       */
+      function toggleDomainSettings() {
+        const isHidden = domainSettingsPanel.classList.contains('hidden');
+        if (isHidden) {
+          domainSettingsPanel.classList.remove('hidden');
+          domainChevron.classList.add('rotate-180');
+        } else {
+          domainSettingsPanel.classList.add('hidden');
+          domainChevron.classList.remove('rotate-180');
+        }
+      }
+
+      function selectBaseDomain(mode) {
+        baseDomainMode = mode;
+        if (mode === 'current') {
+          btnDomCurrent.className = 'py-1.5 px-2.5 rounded-lg border border-rose-500/50 bg-rose-500/10 text-rose-300 font-medium text-[11px] truncate text-center transition-all cursor-pointer';
+          btnDomPlymaster.className = 'py-1.5 px-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white font-medium text-[11px] truncate text-center transition-all cursor-pointer';
+        } else if (mode === 'plymaster') {
+          btnDomPlymaster.className = 'py-1.5 px-2.5 rounded-lg border border-rose-500/50 bg-rose-500/10 text-rose-300 font-medium text-[11px] truncate text-center transition-all cursor-pointer';
+          btnDomCurrent.className = 'py-1.5 px-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white font-medium text-[11px] truncate text-center transition-all cursor-pointer';
+        }
+
+        if (currentSongId) {
+          const shareUrl = buildShareUrl(currentSongId);
+          lastGeneratedFullUrl = shareUrl;
+          generatedLinkInput.value = shareUrl;
+        }
+      }
+
+      function handleCustomDomainChange() {
+        const val = customDomainInput.value.trim();
+        if (val) {
+          baseDomainMode = 'custom';
+          customDomainValue = val;
+          btnDomCurrent.className = 'py-1.5 px-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white font-medium text-[11px] truncate text-center transition-all cursor-pointer';
+          btnDomPlymaster.className = 'py-1.5 px-2.5 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white font-medium text-[11px] truncate text-center transition-all cursor-pointer';
+        } else {
+          selectBaseDomain('current');
+        }
+
+        if (currentSongId) {
+          const shareUrl = buildShareUrl(currentSongId);
+          lastGeneratedFullUrl = shareUrl;
+          generatedLinkInput.value = shareUrl;
+        }
+      }
+
+      function showInputError(show) {
+        if (show) {
+          inputErrorMsg.classList.remove('hidden');
+          sunoInput.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+        } else {
+          inputErrorMsg.classList.add('hidden');
+          sunoInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+        }
+      }
+
+      /**
+       * 클립보드 복사 유틸 (iframe 및 모바일 호환)
+       */
+      function copyTextToClipboard(text, onSuccess) {
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text)
+            .then(() => {
+              if (onSuccess) onSuccess();
+            })
+            .catch(() => {
+              fallbackCopyText(text, onSuccess);
+            });
+        } else {
+          fallbackCopyText(text, onSuccess);
+        }
+      }
+
+      function fallbackCopyText(text, onSuccess) {
+        try {
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '-999999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          if (successful && onSuccess) onSuccess();
+        } catch (err) {
+          showToast('클립보드 복사 권한을 확인해 주세요.', 'error');
+        }
+      }
+
+      function copyGeneratedLink() {
+        if (!generatedLinkInput.value) return;
+        copyTextToClipboard(generatedLinkInput.value, () => {
+          showToast('공유 링크가 클립보드에 복사되었습니다!', 'success');
+        });
+      }
+
+      function copyCurrentUrl() {
+        const shareUrl = buildShareUrl(currentSongId || extractSongId(window.location.href));
+        copyTextToClipboard(shareUrl, () => {
+          showToast('현재 플레이어 링크가 복사되었습니다!', 'success');
+        });
+      }
+
+      function navigateDirectToPlayer() {
+        if (!currentSongId) return;
+        const urlParams = isShortUrlMode ? `?s=${uuidToBase62(currentSongId)}` : `?id=${currentSongId}`;
+        const localTargetUrl = `${window.location.origin}${window.location.pathname}${urlParams}`;
+        window.history.pushState({ songId: currentSongId }, '', localTargetUrl);
+        renderPlayerMode(currentSongId);
+      }
+
+      function switchToGeneratorMode() {
+        const origin = window.location.origin;
+        const pathname = window.location.pathname;
+        const cleanUrl = `${origin}${pathname}`;
+        window.history.pushState({}, '', cleanUrl);
+        currentSongId = '';
+        renderGeneratorMode();
+      }
+
+      function clearInput() {
+        sunoInput.value = '';
+        btnClearInput.classList.add('hidden');
+        showInputError(false);
+        sunoInput.focus();
+      }
+
+      function fillSampleSong() {
+        const sampleUrl = 'https://suno.com/song/0016d8de-dd43-4a19-a45e-721ea229120e';
+        sunoInput.value = sampleUrl;
+        btnClearInput.classList.remove('hidden');
+        showInputError(false);
+        handleGenerateShareLink();
+      }
+
+      /**
+       * 토스트 알림 표시
+       */
+      function showToast(message, type = 'success') {
+        if (toastTimeout) {
+          clearTimeout(toastTimeout);
+        }
+
+        toastText.textContent = message;
+
+        if (type === 'error') {
+          toastIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          `;
+        } else {
+          toastIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+        }
+
+        toastNotification.classList.remove('opacity-0', '-translate-y-4');
+        toastNotification.classList.add('opacity-100', 'translate-y-0');
+
+        toastTimeout = setTimeout(() => {
+          toastNotification.classList.remove('opacity-100', 'translate-y-0');
+          toastNotification.classList.add('opacity-0', '-translate-y-4');
+        }, 3000);
+      }
+
+      // 이벤트 리스너 등록
+      sunoInput.addEventListener('input', () => {
+        if (sunoInput.value.length > 0) {
+          btnClearInput.classList.remove('hidden');
+        } else {
+          btnClearInput.classList.add('hidden');
+        }
+        showInputError(false);
+      });
+
+      // 브라우저 뒤로가기 / 앞으로가기 지원
+      window.addEventListener('popstate', () => {
+        initRouter();
+      });
+
+      // 초기 실행
+      initRouter();
+    </script>
+  </body>
+</html>
