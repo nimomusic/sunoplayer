@@ -1,0 +1,6 @@
+{
+  "name": "Suno 즉석 플레이어 by Plymaster",
+  "description": "Suno음악을 프롬프트 노출없이 빠르게 공유",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
