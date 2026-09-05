@@ -406,27 +406,22 @@
             </div>
           </div>
 
-          <!-- 플레이어 하단 대안 재생 모드 (오디오 직접 스트림) -->
-          <div id="direct-stream-box" class="mt-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/60 flex items-center justify-between text-xs">
-            <div class="flex items-center gap-2 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              </svg>
-              <span class="text-slate-300">iframe 차단 시 Suno 원본 페이지로 바로 듣기</span>
-            </div>
-            <button
-              type="button"
-              onclick="openSunoDirect()"
-              class="px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1 cursor-pointer shrink-0"
+          <!-- 플레이어 하단: 무료 스트리밍 링크 (가운데 정렬) -->
+          <div id="direct-stream-box" class="mt-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/60 flex items-center justify-center text-xs">
+            <a
+              id="stream-link"
+              href="https://www.plymaster.co.kr/?view=pop"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-xs sm:text-sm font-medium text-slate-300 hover:text-rose-400 transition-colors inline-flex items-center justify-center gap-1.5 group py-0.5"
             >
-              <span>Suno에서 열기</span>
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <span>*무료 스트리밍(Free Streamming)</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-400 transition-colors group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <line x1="10" y1="14" x2="21" y2="3"></line>
               </svg>
-            </button>
+            </a>
           </div>
 
           <!-- 하단 액션 버튼: [나도 음원 공유하기] -->
@@ -449,25 +444,9 @@
       </div>
     </main>
 
-    <!-- [3. 하단 공통 고정 푸터 (필수 요구사항)] -->
+    <!-- [3. 하단 공통 고정 푸터] -->
     <footer class="w-full py-5 px-4 text-center select-none border-t border-slate-800/80 bg-slate-950/40 backdrop-blur-sm">
-      <div class="max-w-md mx-auto space-y-1.5">
-        <div>
-          <a
-            id="footer-stream-link"
-            href="https://www.plymaster.co.kr/?view=pop"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-xs sm:text-sm font-medium text-slate-400 hover:text-rose-400 transition-colors inline-flex items-center gap-1.5 group py-1"
-          >
-            <span>*무료 스트리밍(Free Streamming)</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500 group-hover:text-rose-400 transition-colors group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-          </a>
-        </div>
+      <div class="max-w-md mx-auto">
         <p class="text-[11px] text-slate-400">
           Powered by Plymaster &copy; Suno Instant Player
         </p>
