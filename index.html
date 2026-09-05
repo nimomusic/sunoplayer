@@ -320,7 +320,7 @@
                 </svg>
               </div>
               <h2 class="text-sm sm:text-base font-bold text-white tracking-tight leading-none">
-                Suno 독립 팝업 플레이어
+                Suno 즉석 플레이어
               </h2>
             </div>
 
@@ -341,7 +341,7 @@
             </div>
           </div>
 
-          <!-- 붉은 색 부분: 독립 팝업 플레이어 메인 영역 (Suno 팝업 창 높이 450px에 완벽 일치) -->
+          <!-- 붉은 색 부분: 즉석 플레이어 메인 영역 (Suno 팝업 창 높이 450px에 완벽 일치) -->
           <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950/90 border border-slate-700/80 p-6 flex flex-col items-center justify-center text-center shadow-2xl h-[450px] min-h-[450px]">
             <!-- 배경 블러 앰비언트 글로우 -->
             <div id="popup-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-20 blur-3xl scale-125 pointer-events-none transition-all duration-700"></div>
@@ -376,7 +376,7 @@
               </p>
             </div>
 
-            <!-- 대형 독립 팝업 플레이어 실행 버튼 -->
+            <!-- 대형 즉석 플레이어 실행 버튼 -->
             <div class="relative z-10 w-full max-w-xs space-y-2.5">
               <button
                 type="button"
@@ -387,29 +387,16 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                <span id="btn-launch-popup-text">독립 팝업 플레이어로 감상하기</span>
+                <span id="btn-launch-popup-text">즉석 플레이어로 감상하기</span>
               </button>
 
               <!-- 상태 배너 & 새 탭에서 열기 -->
               <div class="flex items-center justify-center gap-2.5 text-[11px] text-slate-400">
                 <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
                   <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span id="popup-status-text">독립 팝업 플레이어 준비됨</span>
+                  <span id="popup-status-text">즉석 플레이어 준비됨</span>
                 </span>
-                <span class="text-slate-600">•</span>
-                <button
-                  type="button"
-                  onclick="openSunoDirect()"
-                  class="hover:text-slate-200 underline underline-offset-2 transition-colors cursor-pointer inline-flex items-center gap-1"
-                  title="Suno 원본 페이지 새 탭 열기"
-                >
-                  <span>새 탭 열기</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                </button>
+                <span class="text-slate-600">•</span>          
               </div>
             </div>
           </div>
@@ -665,7 +652,7 @@
       }
 
       /**
-       * 플레이어 감상 모드 UI 활성화 (독립 팝업 플레이어 전용)
+       * 플레이어 감상 모드 UI 활성화 (즉석 플레이어 전용)
        */
       async function renderPlayerMode(songId) {
         currentSongId = songId;
@@ -685,8 +672,8 @@
         if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
         if (titleEl) titleEl.textContent = '음원 정보를 불러오는 중...';
         if (artistEl) artistEl.textContent = 'Suno Creator';
-        if (btnText) btnText.textContent = '독립 팝업 플레이어로 감상하기';
-        if (statusText) statusText.textContent = '독립 팝업 플레이어 대기 중';
+        if (btnText) btnText.textContent = '즉석 플레이어로 감상하기';
+        if (statusText) statusText.textContent = '즉석 플레이어 대기 중';
 
         // 메타데이터 비동기 로드
         let meta = songDataCache[songId];
@@ -714,12 +701,12 @@
           if (titleEl) titleEl.textContent = `Suno Track (${songId.slice(0, 8)})`;
         }
 
-        // 페이지 접속 시 독립 팝업 플레이어 자동 오픈 시도
+        // 페이지 접속 시 즉석 플레이어 자동 오픈 시도
         openMiniPlayerPopup(false);
       }
 
       /**
-       * 독립 팝업 플레이어 열기 (브라우저 쿠키 제약 없는 최상위 창 실행)
+       * 즉석 플레이어 열기 (브라우저 쿠키 제약 없는 최상위 창 실행)
        * 첨부된 이미지처럼 메인 카드 상단 헤더 바로 아래에 정확히 팝업이 위치하도록 좌표와 크기 계산
        * @param {boolean} isUserClick 사용자가 직접 클릭해서 열었는지 여부
        */
@@ -785,20 +772,20 @@
             showToast('팝업이 차단되어 새 탭으로 플레이어를 엽니다.', 'error');
             window.open(embedUrl, '_blank');
           } else {
-            showToast('중앙의 버튼을 눌러 독립 팝업 플레이어를 실행하세요.', 'info');
+            showToast('중앙의 버튼을 눌러 즉석 플레이어를 실행하세요.', 'info');
             if (btnText) btnText.textContent = '클릭하여 팝업 플레이어 열기';
             const launchBtn = document.getElementById('btn-launch-popup');
             if (launchBtn) launchBtn.classList.add('animate-pulse');
           }
         } else {
           popup.focus();
-          if (btnText) btnText.textContent = '팝업 플레이어 다시 열기';
-          if (statusText) statusText.textContent = '독립 팝업 플레이어 실행 중';
+          if (btnText) btnText.textContent = '즉석 플레이어 다시 열기';
+          if (statusText) statusText.textContent = '즉석 플레이어 실행 중';
           const launchBtn = document.getElementById('btn-launch-popup');
           if (launchBtn) launchBtn.classList.remove('animate-pulse');
 
           if (isUserClick) {
-            showToast('독립 팝업 플레이어가 실행되었습니다.', 'success');
+            showToast('즉석 플레이어가 실행되었습니다.', 'success');
           }
         }
       }
