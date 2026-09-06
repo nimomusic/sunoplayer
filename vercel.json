@@ -1,8 +1,62 @@
 {
+  "cleanUrls": true,
+  "functions": {
+    "api/*.ts": {
+      "includeFiles": "{index.html,dist/**}"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/s/(.*)",
+      "destination": "/api/share?s=$1"
+    },
+    {
+      "source": "/song/(.*)",
+      "destination": "/api/share?id=$1"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "s"
+        }
+      ],
+      "destination": "/api/share"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "id"
+        }
+      ],
+      "destination": "/api/share"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "url"
+        }
+      ],
+      "destination": "/api/share"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "suno"
+        }
+      ],
+      "destination": "/api/share"
     },
     {
       "source": "/(.*)",
