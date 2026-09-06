@@ -60,12 +60,11 @@ export default async function handler(req: any, res: any) {
 
     // Default template reading with robust multiple fallback search paths
     let template = "";
+    const cwd = process.cwd();
     const possiblePaths = [
-      path.join(process.cwd(), "dist", "index.html"),
-      path.join(process.cwd(), "index.html"),
-      path.join(__dirname, "..", "dist", "index.html"),
-      path.join(__dirname, "..", "index.html"),
-      path.join(__dirname, "index.html"),
+      path.join(cwd, "dist", "index.html"),
+      path.join(cwd, "index.html"),
+      path.join(cwd, "public", "index.html"),
     ];
     for (const p of possiblePaths) {
       try {
