@@ -404,7 +404,13 @@ async function startServer() {
       return next();
     }
 
-    const songQuery = req.query.s || req.query.id || req.query.url || req.query.suno;
+    let songQuery = (req.query.s || req.query.id || req.query.url || req.query.suno) as string;
+    if (!songQuery) {
+      const matchS = req.path.match(/^\/s\/([a-zA-Z0-9_-]+)/);
+      const matchSong = req.path.match(/^\/song\/([a-zA-Z0-9_-]+)/);
+      if (matchS) songQuery = matchS[1];
+      else if (matchSong) songQuery = matchSong[1];
+    }
     if (!songQuery || typeof songQuery !== "string") {
       return next();
     }
