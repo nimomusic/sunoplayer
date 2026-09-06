@@ -230,28 +230,6 @@
             </button>
           </form>
 
-          <!-- 샘플 URL 클릭 버튼 및 안내 가이드 -->
-          <div class="mt-5 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-            <span class="text-slate-400">샘플로 바로 테스트해보기:</span>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                onclick="fillSampleSong('short')"
-                class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
-              >
-                단축형 (/s/...)
-              </button>
-              <span class="text-slate-600">|</span>
-              <button
-                type="button"
-                onclick="fillSampleSong('full')"
-                class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
-              >
-                표준형 (/song/...)
-              </button>
-            </div>
-          </div>
-
           <!-- 생성된 링크 결과 카드 (링크 생성 시 노출) -->
           <div id="result-box" class="hidden mt-5 pt-5 border-t border-slate-700/60 transition-all duration-300">
             <div class="p-4 bg-slate-900/90 rounded-xl border border-slate-700/80 space-y-3">
@@ -363,21 +341,8 @@
               </h2>
             </div>
 
-            <!-- 플레이어 도구 모음 (독립 팝업 & 링크 복사) -->
+            <!-- 플레이어 도구 모음 (링크 복사) -->
             <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                onclick="openMiniPlayerPopup(true)"
-                class="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="별도 팝업 창으로 띄우기"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-                <span class="text-[11px]">팝업 창</span>
-              </button>
               <button
                 type="button"
                 onclick="copyCurrentUrl()"
@@ -451,26 +416,12 @@
                 <span id="btn-launch-popup-text">Suno 플레이어로 감상하기</span>
               </button>
 
-              <!-- 상태 표시 및 원본 새 탭 열기 -->
+              <!-- 상태 표시 -->
               <div class="flex items-center justify-center gap-2 text-[11px] text-slate-400">
                 <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
                   <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                   <span id="popup-status-text">음원 준비 완료</span>
                 </span>
-                <span class="text-slate-600">•</span>
-                <button
-                  type="button"
-                  onclick="openSunoDirect()"
-                  class="hover:text-slate-200 underline underline-offset-2 transition-colors cursor-pointer inline-flex items-center gap-1"
-                  title="Suno 원본 페이지 새 탭 열기"
-                >
-                  <span>새 탭 열기</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
@@ -682,12 +633,20 @@
 
         const applyMeta = (meta) => {
           if (!meta) return;
-          if (previewImg && meta.imageUrl) previewImg.src = meta.imageUrl;
-          if (previewTitle && meta.title) previewTitle.textContent = meta.title;
-          if (previewArtist && meta.artist) previewArtist.textContent = meta.artist;
+          const fallbackTitle = `Suno Track (${songId ? songId.slice(0, 8) : ''})`;
+          const title = meta.title || fallbackTitle;
+          const artist = meta.artist || 'Suno Artist';
+          const img = meta.imageUrl || `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
+
+          if (previewImg) previewImg.src = img;
+          if (previewTitle) {
+            previewTitle.textContent = title;
+            previewTitle.title = title;
+          }
+          if (previewArtist) previewArtist.textContent = artist;
         };
 
-        if (initialMeta) {
+        if (initialMeta && initialMeta.title) {
           applyMeta(initialMeta);
           return;
         }
@@ -696,10 +655,15 @@
         const fallbackImg = `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
         if (previewImg) previewImg.src = fallbackImg;
         if (previewTitle) previewTitle.textContent = '곡 정보를 불러오는 중...';
-        if (previewArtist) previewArtist.textContent = 'Suno Creator';
+        if (previewArtist) previewArtist.textContent = 'Suno Artist';
 
         fetchSongMetadata(songId).then(meta => {
-          if (meta) applyMeta(meta);
+          if (meta) {
+            applyMeta(meta);
+          } else {
+            if (previewTitle) previewTitle.textContent = `Suno 음원 (${songId.slice(0, 8)})`;
+            if (previewArtist) previewArtist.textContent = 'Suno Creator';
+          }
         });
       }
 
@@ -813,15 +777,25 @@
         const btnText = document.getElementById('btn-launch-popup-text');
         const statusText = document.getElementById('popup-status-text');
 
+        // 서버 렌더링된 실제 제목 및 아티스트 확인
+        const existingTitle = titleEl ? titleEl.textContent.trim() : '';
+        const existingArtist = artistEl ? artistEl.textContent.trim() : '';
+        const hasServerTitle = existingTitle && !existingTitle.includes('음원 정보') && !existingTitle.includes('불러오는');
+
         // 기본값 설정 (Suno CDN 구조)
         const defaultCover = `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
-        if (coverImg) coverImg.src = defaultCover;
-        if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
-        if (titleEl) {
-          titleEl.textContent = '음원 정보를 불러오는 중...';
-          titleEl.title = '음원 정보를 불러오는 중...';
+        if (coverImg && (!coverImg.src || coverImg.src.includes('placeholder') || !coverImg.src.includes(songId))) {
+          coverImg.src = defaultCover;
         }
-        if (artistEl) artistEl.textContent = 'Suno Instant Player';
+        if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
+
+        if (!hasServerTitle) {
+          if (titleEl) {
+            titleEl.textContent = '음원 정보를 불러오는 중...';
+            titleEl.title = '음원 정보를 불러오는 중...';
+          }
+          if (artistEl) artistEl.textContent = 'Suno Creator';
+        }
         if (handleEl) {
           handleEl.textContent = '';
           handleEl.classList.add('hidden');
@@ -850,12 +824,15 @@
         }
 
         if (meta) {
-          if (meta.title && titleEl) {
-            titleEl.textContent = meta.title;
-            titleEl.title = meta.title;
+          const actualTitle = meta.title || (hasServerTitle ? existingTitle : `Suno Track (${songId.slice(0, 8)})`);
+          const actualArtist = meta.artist || (existingArtist && existingArtist !== 'Suno Instant Player' ? existingArtist : 'Suno Creator');
+
+          if (titleEl) {
+            titleEl.textContent = actualTitle;
+            titleEl.title = actualTitle;
           }
-          if (meta.artist && artistEl) {
-            artistEl.textContent = meta.artist;
+          if (artistEl) {
+            artistEl.textContent = actualArtist;
           }
           if (meta.handle && handleEl) {
             handleEl.textContent = meta.handle;
@@ -882,13 +859,19 @@
             coverImg.src = meta.imageUrl;
             if (bgBlur) bgBlur.style.backgroundImage = `url('${meta.imageUrl}')`;
           }
-          if (meta.title) {
-            document.title = `${meta.title} - ${meta.artist || 'Suno'} | Suno 즉석 플레이어`;
-          }
+          document.title = `${actualTitle} - ${actualArtist} | Suno 즉석 플레이어`;
           // 클라이언트 Open Graph 메타태그 실시간 동기화
           updateClientMetaTags(meta);
         } else {
-          if (titleEl) titleEl.textContent = `Suno Track (${songId.slice(0, 8)})`;
+          const finalTitle = hasServerTitle ? existingTitle : `Suno 음원 (${songId.slice(0, 8)})`;
+          const finalArtist = existingArtist && existingArtist !== 'Suno Instant Player' ? existingArtist : 'Suno Creator';
+          if (titleEl) {
+            titleEl.textContent = finalTitle;
+            titleEl.title = finalTitle;
+          }
+          if (artistEl) {
+            artistEl.textContent = finalArtist;
+          }
         }
 
         // 모바일 기기 판별:
@@ -1120,7 +1103,13 @@
         resultBox.classList.remove('hidden');
 
         // SNS 공유 카드 미리보기 실시간 반영 (붉은색: 곡 이미지, 검정색: 곡 제목)
-        updateShareCardPreview(extractedId, songDataCache[extractedId]);
+        let cachedMeta = songDataCache[extractedId];
+        updateShareCardPreview(extractedId, cachedMeta);
+        if (!cachedMeta || !cachedMeta.title) {
+          fetchSongMetadata(extractedId).then(meta => {
+            if (meta) updateShareCardPreview(extractedId, meta);
+          });
+        }
 
         // 클립보드 복사
         copyTextToClipboard(shareUrl, () => {
@@ -1282,16 +1271,6 @@
         btnClearInput.classList.remove('hidden');
         showInputError(false);
         sunoInput.focus();
-      }
-
-      function fillSampleSong(type = 'short') {
-        const sampleUrl = type === 'short'
-          ? 'https://suno.com/s/fo27V3FIRHDQTrmk'
-          : 'https://suno.com/song/0016d8de-dd43-4a19-a45e-721ea229120e';
-        sunoInput.value = sampleUrl;
-        btnClearInput.classList.remove('hidden');
-        showInputError(false);
-        handleGenerateShareLink();
       }
 
       /**
