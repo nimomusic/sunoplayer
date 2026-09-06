@@ -306,19 +306,6 @@
             <div class="flex items-center gap-1.5">
               <button
                 type="button"
-                onclick="openMiniPlayerPopup(true)"
-                class="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="별도 팝업 창으로 띄우기"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-                <span class="text-[11px]">팝업 창</span>
-              </button>
-              <button
-                type="button"
                 onclick="copyCurrentUrl()"
                 class="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
                 title="이 플레이어 링크 복사"
@@ -697,7 +684,7 @@
           // PC 환경에서는 카드 위에 정확히 팝업이 뜨도록 자동 실행
           openMiniPlayerPopup(false);
         } else {
-          if (btnText) btnText.textContent = '▶ Suno 플레이어로 감상하기';
+          if (btnText) btnText.textContent = '▶ Play';
           if (statusText) statusText.textContent = '아래 버튼으로 재생 가능';
         }
       }
@@ -718,7 +705,7 @@
           const popup = window.open(embedUrl, '_blank');
           const btnText = document.getElementById('btn-launch-popup-text');
           const statusText = document.getElementById('popup-status-text');
-          if (btnText) btnText.textContent = '▶ Suno 플레이어 다시 열기';
+          if (btnText) btnText.textContent = '▶ Play';
           if (statusText) statusText.textContent = '재생 창 열림 (창 닫고 복귀 가능)';
 
           if (isUserClick) {
