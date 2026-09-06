@@ -4,18 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Suno 즉석 플레이어</title>
-    <meta name="description" content="프롬프트 노출없이 쉽고 빠르게 공유!" />
+    <meta name="description" content="Suno음악을 프롬프트 노출없이 재생" />
 
     <!-- Open Graph (OG) 소셜 미디어 메타태그 -->
     <meta property="og:title" content="Suno 즉석 플레이어" />
-    <meta property="og:description" content="프롬프트 노출없이 쉽고 빠르게 공유" />
+    <meta property="og:description" content="Suno음악을 프롬프트 노출없이 재생" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" />
 
     <!-- Twitter 카드 메타태그 -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:title" content="Suno 즉석 플레이어" />
-    <meta property="twitter:description" content="프롬프트 노출없이 쉽고 빠르게 공유" />
+    <meta property="twitter:description" content="Suno음악을 프롬프트 노출없이 재생" />
     <meta property="twitter:image" content="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" />
 
     <!-- Favicon -->
@@ -230,6 +230,28 @@
             </button>
           </form>
 
+          <!-- 샘플 URL 클릭 버튼 및 안내 가이드 -->
+          <div class="mt-5 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+            <span class="text-slate-400">샘플로 바로 테스트해보기:</span>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                onclick="fillSampleSong('short')"
+                class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
+              >
+                단축형 (/s/...)
+              </button>
+              <span class="text-slate-600">|</span>
+              <button
+                type="button"
+                onclick="fillSampleSong('full')"
+                class="text-rose-400 hover:text-rose-300 underline underline-offset-4 decoration-rose-500/40 hover:decoration-rose-400 transition-colors cursor-pointer"
+              >
+                표준형 (/song/...)
+              </button>
+            </div>
+          </div>
+
           <!-- 생성된 링크 결과 카드 (링크 생성 시 노출) -->
           <div id="result-box" class="hidden mt-5 pt-5 border-t border-slate-700/60 transition-all duration-300">
             <div class="p-4 bg-slate-900/90 rounded-xl border border-slate-700/80 space-y-3">
@@ -241,6 +263,45 @@
                   <span id="link-type-label">생성된 단축 공유 링크</span>
                 </span>
                 <span class="text-[11px] text-slate-400">클립보드 복사 완료</span>
+              </div>
+
+              <!-- 공유 카드 미리보기: 검정색 부분(곡 제목) / 붉은색 부분(공유한 수노곡 이미지) -->
+              <div id="share-card-preview" class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                  <span class="flex items-center gap-1.5 text-rose-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                      <circle cx="9" cy="9" r="2"></circle>
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                    </svg>
+                    <span>SNS 공유 카드 미리보기</span>
+                  </span>
+                  <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-medium">카톡 카드 연동</span>
+                </div>
+
+                <!-- 카카오톡/SNS 공유 카드 디자인 매칭 -->
+                <div class="flex items-center gap-3 p-2.5 rounded-lg bg-slate-900 border border-slate-700/70">
+                  <!-- 붉은색 영역: 공유한 수노곡의 이미지 -->
+                  <div class="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-rose-500/60 bg-slate-800 shadow-sm flex items-center justify-center">
+                    <img id="share-preview-img" src="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" alt="Song Cover" class="w-full h-full object-cover" />
+                    <div class="absolute bottom-0 inset-x-0 bg-rose-600/90 text-white text-[8px] font-bold text-center py-0.5 leading-none">
+                      곡 이미지
+                    </div>
+                  </div>
+                  <!-- 검정색 영역: 곡 제목 및 정보 -->
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1 mb-0.5">
+                      <span class="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 text-[9px] font-semibold border border-rose-500/30">곡 제목</span>
+                      <span id="share-preview-artist" class="text-[10px] text-slate-400 truncate">Suno Instant Player</span>
+                    </div>
+                    <p id="share-preview-title" class="text-xs sm:text-sm font-bold text-white truncate leading-snug">
+                      음원 정보를 불러오는 중...
+                    </p>
+                    <p class="text-[10px] text-slate-400 truncate mt-0.5">
+                      프롬프트 노출없이 쉽고 빠르게 공유
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <!-- 축약형 디스플레이와 복사 버튼 -->
@@ -306,6 +367,19 @@
             <div class="flex items-center gap-1.5">
               <button
                 type="button"
+                onclick="openMiniPlayerPopup(true)"
+                class="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="별도 팝업 창으로 띄우기"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span class="text-[11px]">팝업 창</span>
+              </button>
+              <button
+                type="button"
                 onclick="copyCurrentUrl()"
                 class="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
                 title="이 플레이어 링크 복사"
@@ -345,13 +419,22 @@
             </div>
 
             <!-- 곡 제목 및 아티스트 정보 -->
-            <div class="relative z-10 max-w-sm mb-4 px-2">
-              <h3 id="popup-song-title" class="text-base sm:text-lg font-bold text-white tracking-tight truncate">
-                메신저, SNS로 빠르고 편하게 공유 해 보세요!
+            <div class="relative z-10 max-w-sm mb-4 px-2 w-full text-center">
+              <h3
+                id="popup-song-title"
+                title="음원 정보를 불러오는 중..."
+                class="text-base sm:text-lg font-bold text-white tracking-tight truncate select-text"
+              >
+                음원 정보를 불러오는 중...
               </h3>
-              <p id="popup-song-artist" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
-                Suno Instant Player
-              </p>
+              <div class="flex items-center justify-center gap-1.5 mt-1 text-xs sm:text-sm text-slate-300 font-medium">
+                <span class="text-slate-400">by</span>
+                <span id="popup-song-artist" class="text-rose-400 font-semibold truncate max-w-[180px] sm:max-w-[220px]">
+                  Suno Instant Player
+                </span>
+                <span id="popup-song-handle" class="hidden text-slate-400 text-xs font-normal truncate max-w-[120px]"></span>
+              </div>
+              <div id="popup-song-tags-container" class="hidden mt-2 items-center justify-center gap-1.5 flex-wrap"></div>
             </div>
 
             <!-- 대형 플레이어 실행 버튼 -->
@@ -375,6 +458,19 @@
                   <span id="popup-status-text">음원 준비 완료</span>
                 </span>
                 <span class="text-slate-600">•</span>
+                <button
+                  type="button"
+                  onclick="openSunoDirect()"
+                  class="hover:text-slate-200 underline underline-offset-2 transition-colors cursor-pointer inline-flex items-center gap-1"
+                  title="Suno 원본 페이지 새 탭 열기"
+                >
+                  <span>새 탭 열기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -556,6 +652,80 @@
       let songDataCache = {};
 
       /**
+       * 실시간 음원 메타데이터 비동기 로드 함수
+       */
+      async function fetchSongMetadata(songId) {
+        if (!songId) return null;
+        if (songDataCache[songId]) return songDataCache[songId];
+        try {
+          const res = await fetch(`/api/resolve-suno?url=${encodeURIComponent(songId)}`);
+          const data = await res.json();
+          if (data.success) {
+            songDataCache[songId] = data;
+            return data;
+          }
+        } catch (e) {
+          console.warn('Song metadata fetch warning:', e);
+        }
+        return null;
+      }
+
+      /**
+       * 공유 카드 미리보기 실시간 업데이트:
+       * - 붉은색 영역: 공유한 수노곡의 이미지
+       * - 검정색 영역: 곡 제목 및 아티스트
+       */
+      function updateShareCardPreview(songId, initialMeta) {
+        const previewImg = document.getElementById('share-preview-img');
+        const previewTitle = document.getElementById('share-preview-title');
+        const previewArtist = document.getElementById('share-preview-artist');
+
+        const applyMeta = (meta) => {
+          if (!meta) return;
+          if (previewImg && meta.imageUrl) previewImg.src = meta.imageUrl;
+          if (previewTitle && meta.title) previewTitle.textContent = meta.title;
+          if (previewArtist && meta.artist) previewArtist.textContent = meta.artist;
+        };
+
+        if (initialMeta) {
+          applyMeta(initialMeta);
+          return;
+        }
+
+        // 초기 기본값
+        const fallbackImg = `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
+        if (previewImg) previewImg.src = fallbackImg;
+        if (previewTitle) previewTitle.textContent = '곡 정보를 불러오는 중...';
+        if (previewArtist) previewArtist.textContent = 'Suno Creator';
+
+        fetchSongMetadata(songId).then(meta => {
+          if (meta) applyMeta(meta);
+        });
+      }
+
+      /**
+       * 클라이언트 DOM 내 Open Graph 메타태그 실시간 동기화
+       */
+      function updateClientMetaTags(meta) {
+        if (!meta) return;
+        const setMeta = (selector, content) => {
+          if (!content) return;
+          const el = document.querySelector(selector);
+          if (el) el.setAttribute('content', content);
+        };
+        const title = meta.title || 'Suno 음원';
+        const image = meta.imageUrl || `https://cdn2.suno.ai/image_large_${meta.songId}.jpeg`;
+        const desc = '프롬프트 노출없이 쉽고 빠르게 공유';
+
+        setMeta('meta[property="og:title"]', title);
+        setMeta('meta[property="og:image"]', image);
+        setMeta('meta[property="og:description"]', desc);
+        setMeta('meta[property="twitter:title"]', title);
+        setMeta('meta[property="twitter:image"]', image);
+        setMeta('meta[property="twitter:description"]', desc);
+      }
+
+      /**
        * 1. 초기 라우팅 및 뷰 전환 로직
        * ?id={uuid}, 단축형 ?s={base62}, 또는 원본 ?url={suno_url} 지원
        */
@@ -638,6 +808,8 @@
         const bgBlur = document.getElementById('popup-bg-blur');
         const titleEl = document.getElementById('popup-song-title');
         const artistEl = document.getElementById('popup-song-artist');
+        const handleEl = document.getElementById('popup-song-handle');
+        const tagsContainer = document.getElementById('popup-song-tags-container');
         const btnText = document.getElementById('btn-launch-popup-text');
         const statusText = document.getElementById('popup-status-text');
 
@@ -645,8 +817,20 @@
         const defaultCover = `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
         if (coverImg) coverImg.src = defaultCover;
         if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
-        if (titleEl) titleEl.textContent = '메신저, SNS로 쉽고 빠르게 공유해 보세요.';
+        if (titleEl) {
+          titleEl.textContent = '음원 정보를 불러오는 중...';
+          titleEl.title = '음원 정보를 불러오는 중...';
+        }
         if (artistEl) artistEl.textContent = 'Suno Instant Player';
+        if (handleEl) {
+          handleEl.textContent = '';
+          handleEl.classList.add('hidden');
+        }
+        if (tagsContainer) {
+          tagsContainer.innerHTML = '';
+          tagsContainer.classList.add('hidden');
+          tagsContainer.classList.remove('flex');
+        }
         if (btnText) btnText.textContent = 'Suno 플레이어로 감상하기';
         if (statusText) statusText.textContent = '음원 준비 완료';
 
@@ -666,12 +850,43 @@
         }
 
         if (meta) {
-          if (meta.title && titleEl) titleEl.textContent = meta.title;
-          if (meta.artist && artistEl) artistEl.textContent = meta.artist;
+          if (meta.title && titleEl) {
+            titleEl.textContent = meta.title;
+            titleEl.title = meta.title;
+          }
+          if (meta.artist && artistEl) {
+            artistEl.textContent = meta.artist;
+          }
+          if (meta.handle && handleEl) {
+            handleEl.textContent = meta.handle;
+            handleEl.classList.remove('hidden');
+          }
+          if (meta.tags && tagsContainer) {
+            const tagList = meta.tags
+              .split(',')
+              .map(t => t.trim())
+              .filter(Boolean)
+              .slice(0, 3);
+            if (tagList.length > 0) {
+              tagsContainer.innerHTML = tagList
+                .map(
+                  tag =>
+                    `<span class="px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700/70 text-slate-300 text-[10px] font-medium tracking-wide">#${tag}</span>`
+                )
+                .join('');
+              tagsContainer.classList.remove('hidden');
+              tagsContainer.classList.add('flex');
+            }
+          }
           if (meta.imageUrl && coverImg) {
             coverImg.src = meta.imageUrl;
             if (bgBlur) bgBlur.style.backgroundImage = `url('${meta.imageUrl}')`;
           }
+          if (meta.title) {
+            document.title = `${meta.title} - ${meta.artist || 'Suno'} | Suno 즉석 플레이어`;
+          }
+          // 클라이언트 Open Graph 메타태그 실시간 동기화
+          updateClientMetaTags(meta);
         } else {
           if (titleEl) titleEl.textContent = `Suno Track (${songId.slice(0, 8)})`;
         }
@@ -684,8 +899,8 @@
           // PC 환경에서는 카드 위에 정확히 팝업이 뜨도록 자동 실행
           openMiniPlayerPopup(false);
         } else {
-          if (btnText) btnText.textContent = 'P L A Y';
-          if (statusText) statusText.textContent = '재생 버튼을 눌러 주세요!';
+          if (btnText) btnText.textContent = '▶ Suno 플레이어로 감상하기';
+          if (statusText) statusText.textContent = '아래 버튼으로 재생 가능';
         }
       }
 
@@ -705,7 +920,7 @@
           const popup = window.open(embedUrl, '_blank');
           const btnText = document.getElementById('btn-launch-popup-text');
           const statusText = document.getElementById('popup-status-text');
-          if (btnText) btnText.textContent = 'P L A Y';
+          if (btnText) btnText.textContent = '▶ Suno 플레이어 다시 열기';
           if (statusText) statusText.textContent = '재생 창 열림 (창 닫고 복귀 가능)';
 
           if (isUserClick) {
@@ -875,6 +1090,7 @@
             const data = await res.json();
             if (data.success && data.songId) {
               extractedId = data.songId;
+              songDataCache[extractedId] = data;
             } else if (data.error) {
               console.warn('API resolver response:', data.error);
             }
@@ -902,6 +1118,9 @@
         generatedLinkInput.value = shareUrl;
         linkTypeLabel.textContent = isShortUrlMode ? '생성된 단축 공유 링크' : '생성된 공유 링크';
         resultBox.classList.remove('hidden');
+
+        // SNS 공유 카드 미리보기 실시간 반영 (붉은색: 곡 이미지, 검정색: 곡 제목)
+        updateShareCardPreview(extractedId, songDataCache[extractedId]);
 
         // 클립보드 복사
         copyTextToClipboard(shareUrl, () => {
