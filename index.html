@@ -3,20 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Suno 즉석 플레이어 by Plymaster</title>
-    <meta name="description" content="Suno음악을 프롬프트 노출없이 빠르게 공유" />
+    <title>Suno 즉석 플레이어</title>
+    <meta name="description" content="Suno음악을 프롬프트 노출없이 재생" />
 
     <!-- Open Graph (OG) 소셜 미디어 메타태그 -->
-    <meta property="og:title" content="Suno 즉석 플레이어 by Plymaster" />
-    <meta property="og:description" content="Suno음악을 프롬프트 노출없이 빠르게 공유" />
+    <meta property="og:title" content="Suno 즉석 플레이어" />
+    <meta property="og:description" content="Suno음악을 프롬프트 노출없이 재생" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" /> <!-- 여기에_실제_1200x630_이미지_URL_입력 -->
+    <meta property="og:image" content="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" />
 
     <!-- Twitter 카드 메타태그 -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content="Suno 즉석 플레이어 by Plymaster" />
-    <meta property="twitter:description" content="Suno음악을 프롬프트 노출없이 빠르게 공유" />
-    <meta property="twitter:image" content="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" /> <!-- 여기에_실제_1200x630_이미지_URL_입력 -->
+    <meta property="twitter:title" content="Suno 즉석 플레이어" />
+    <meta property="twitter:description" content="Suno음악을 프롬프트 노출없이 재생" />
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'%3E%3C/path%3E%3Ccircle cx='6' cy='18' r='3'%3E%3C/circle%3E%3Ccircle cx='18' cy='16' r='3'%3E%3C/circle%3E%3C/svg%3E" />
@@ -96,7 +96,7 @@
               </svg>
             </div>
             <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white mb-2">
-              Suno 즉석 플레이어 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 align-middle ml-1">by Plymaster</span>
+              Suno 즉석 플레이어 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 align-middle ml-1">HOT</span>
             </h1>
             <p class="text-slate-400 text-sm sm:text-base leading-relaxed break-keep">
               Suno 음원 URL을 입력하면 공유용 플레이어 링크가 즉시 생성됩니다.
@@ -108,7 +108,7 @@
             <div>
               <div class="flex items-center justify-between mb-2">
                 <label for="suno-input" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Suno 곡 URL 또는 ID
+                  Suno 음악 URL 링크
                 </label>
                 <!-- 링크 단축 옵션 토글 -->
                 <div class="flex items-center gap-1.5 text-xs">
@@ -174,7 +174,7 @@
                   <line x1="2" y1="12" x2="22" y2="12"></line>
                   <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                 </svg>
-                <span>공유 도메인 설정 (현재 / plymaster.co.kr)</span>
+                <span>공유 도메인 설정</span>
                 <svg id="domain-chevron" xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 transform transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
@@ -328,7 +328,7 @@
             <div class="flex items-center gap-1.5">
               <button
                 type="button"
-                onclick="openMiniPlayerPopup()"
+                onclick="openMiniPlayerPopup(true)"
                 class="text-xs p-2 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
                 title="별도 팝업 창으로 띄우기"
               >
@@ -354,7 +354,7 @@
             </div>
           </div>
 
-          <!-- 독립 팝업 플레이어 메인 영역 (Suno 팝업 창 높이에 최적화) -->
+          <!-- 독립 팝업 플레이어 메인 영역 (Suno 팝업 창 규격에 맞춤) -->
           <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950/90 border border-slate-700/80 p-5 sm:p-6 flex flex-col items-center justify-center text-center shadow-2xl h-[400px] sm:h-[450px]">
             <!-- 배경 블러 앰비언트 글로우 -->
             <div id="popup-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-125 pointer-events-none transition-all duration-700"></div>
@@ -368,7 +368,7 @@
                   alt="Album Cover"
                   class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <!-- 호버/포커스 오버레이 플레이 버튼 -->
+                <!-- 오버레이 재생 아이콘 -->
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
                   <div class="w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
@@ -403,7 +403,7 @@
                 <span id="btn-launch-popup-text">Suno 플레이어로 감상하기</span>
               </button>
 
-              <!-- 상태 배너 & 새 탭에서 열기 -->
+              <!-- 상태 표시 및 원본 새 탭 열기 -->
               <div class="flex items-center justify-center gap-2 text-[11px] text-slate-400">
                 <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
                   <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -469,7 +469,7 @@
     <footer class="w-full py-5 px-4 text-center select-none border-t border-slate-800/80 bg-slate-950/40 backdrop-blur-sm">
       <div class="max-w-md mx-auto">
         <p class="text-[11px] text-slate-400">
-          Powered by Plymaster &copy; Suno Instant Player
+          Powered by Plymaster.co.kr &copy; Suno Instant Player
         </p>
       </div>
     </footer>
@@ -600,11 +600,8 @@
         }
       }
 
-      // 오디오 플레이어 상태
+      // 오디오 메타데이터 캐시
       let songDataCache = {};
-      let isNativePlaying = false;
-      let isLooping = false;
-      let audioListenersInitialized = false;
 
       /**
        * 1. 초기 라우팅 및 뷰 전환 로직
@@ -678,7 +675,7 @@
       }
 
       /**
-       * 플레이어 감상 모드 UI 활성화
+       * 플레이어 감상 모드 UI 활성화 (방법 A 적용)
        */
       async function renderPlayerMode(songId) {
         currentSongId = songId;
@@ -732,7 +729,7 @@
         // 이를 통해 앨범 커버, 곡 정보, 하단 무료 스트리밍 및 음원 공유하기 버튼이 한 화면에 온전히 유지됩니다.
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (!isMobile) {
-          // PC 환경에서는 첨부된 첫 번째 이미지처럼 카드 위에 정확히 팝업이 뜨도록 자동 실행
+          // PC 환경에서는 카드 위에 정확히 팝업이 뜨도록 자동 실행
           openMiniPlayerPopup(false);
         } else {
           if (btnText) btnText.textContent = '▶ Suno 플레이어로 감상하기';
@@ -741,7 +738,7 @@
       }
 
       /**
-       * 독립 팝업 플레이어 열기 (브라우저 쿠키 제약 없는 최상위 창 실행)
+       * 독립 팝업 플레이어 열기
        * PC에서는 메인 카드 상단 헤더 바로 아래에 정확히 팝업이 위치하도록 좌표와 크기 계산
        * 모바일에서는 안전하게 새 탭/창으로 열어 원본 페이지(하단 버튼들)를 보존
        * @param {boolean} isUserClick 사용자가 직접 클릭해서 열었는지 여부
@@ -790,7 +787,7 @@
             ? Math.max(0, (window.outerWidth - window.innerWidth) / 2) 
             : 0;
 
-          // 첨부 이미지 위치에 정확히 팝업이 안착하도록 좌표 산출
+          // 메인 카드 위치에 정확히 팝업이 안착하도록 좌표 산출
           left = Math.round(screenX + rect.left + chromeLeftOffset);
           top = Math.round(screenY + rect.top + chromeTopOffset);
         } else {
@@ -1111,7 +1108,7 @@
 
       function clearInput() {
         sunoInput.value = '';
-        btnClearInput.classList.add('hidden');
+        btnClearInput.classList.remove('hidden');
         showInputError(false);
         sunoInput.focus();
       }
