@@ -350,7 +350,7 @@
                 음원 정보를 불러오는 중...
               </h3>
               <p id="popup-song-artist" class="text-xs sm:text-sm text-slate-400 mt-1 font-medium">
-                Suno Creator
+                Suno Instant Player
               </p>
             </div>
 
@@ -684,8 +684,8 @@
           // PC 환경에서는 카드 위에 정확히 팝업이 뜨도록 자동 실행
           openMiniPlayerPopup(false);
         } else {
-          if (btnText) btnText.textContent = '▶ Play';
-          if (statusText) statusText.textContent = '아래 버튼으로 재생 가능';
+          if (btnText) btnText.textContent = '▶ P L A Y';
+          if (statusText) statusText.textContent = '재생 버튼을 눌러 주세요!';
         }
       }
 
@@ -705,7 +705,7 @@
           const popup = window.open(embedUrl, '_blank');
           const btnText = document.getElementById('btn-launch-popup-text');
           const statusText = document.getElementById('popup-status-text');
-          if (btnText) btnText.textContent = '▶ Play';
+          if (btnText) btnText.textContent = 'P L A Y';
           if (statusText) statusText.textContent = '재생 창 열림 (창 닫고 복귀 가능)';
 
           if (isUserClick) {
