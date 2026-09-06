@@ -646,7 +646,7 @@
         if (coverImg) coverImg.src = defaultCover;
         if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
         if (titleEl) titleEl.textContent = '음원 정보를 불러오는 중...';
-        if (artistEl) artistEl.textContent = 'Suno Creator';
+        if (artistEl) artistEl.textContent = 'Suno Instant Player';
         if (btnText) btnText.textContent = 'Suno 플레이어로 감상하기';
         if (statusText) statusText.textContent = '음원 준비 완료';
 
@@ -684,7 +684,7 @@
           // PC 환경에서는 카드 위에 정확히 팝업이 뜨도록 자동 실행
           openMiniPlayerPopup(false);
         } else {
-          if (btnText) btnText.textContent = '▶ P L A Y';
+          if (btnText) btnText.textContent = 'P L A Y';
           if (statusText) statusText.textContent = '재생 버튼을 눌러 주세요!';
         }
       }
