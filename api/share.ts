@@ -78,7 +78,7 @@ export default async function handler(req: any, res: any) {
     // Details resolution
     let title = "";
     let artist = "Suno Creator";
-    let imageUrl = songId ? `https://cdn2.suno.ai/image_large_${songId}.jpeg` : "https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg";
+    let imageUrl = songId ? `https://cdn2.suno.ai/image_large_${songId}.jpeg` : "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&auto=format&fit=crop&q=80";
 
     if (songId) {
       try {
