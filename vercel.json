@@ -5,6 +5,32 @@
       "includeFiles": "{index.html,dist/**}"
     }
   },
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "s",
+          "value": "(?<shortCode>[a-zA-Z0-9_-]+)"
+        }
+      ],
+      "destination": "/s/:shortCode",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "id",
+          "value": "(?<songId>[a-zA-Z0-9_-]+)"
+        }
+      ],
+      "destination": "/song/:songId",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
