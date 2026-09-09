@@ -161,6 +161,10 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
     }
   }
 
+  if (!audioUrl) {
+    audioUrl = `https://cdn1.suno.ai/${normalizedId}.mp3`;
+  }
+
   const result: SongDetails = {
     songId: normalizedId,
     title: title || `Suno Track (${normalizedId.slice(0, 8)})`,
