@@ -559,26 +559,11 @@
       >
         <!-- 윈도우 상단 타이틀바 (Mac OS 스타일 & 앱 타이틀) -->
         <div class="h-11 bg-slate-900/95 border-b border-slate-800 px-3.5 flex items-center justify-between shrink-0 select-none">
-          <!-- 좌측: Mac OS 스타일 3색 닷 -->
-          <div class="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onclick="closePlayerModal()"
-              title="창 닫기 (ESC)"
-              class="w-3 h-3 rounded-full bg-rose-500 hover:bg-rose-600 transition-colors cursor-pointer"
-            ></button>
-            <button
-              type="button"
-              onclick="reloadPlayerModal()"
-              title="플레이어 새로고침"
-              class="w-3 h-3 rounded-full bg-amber-500 hover:bg-amber-600 transition-colors cursor-pointer"
-            ></button>
-            <button
-              type="button"
-              onclick="openSunoDirect()"
-              title="Suno 원본 페이지 열기"
-              class="w-3 h-3 rounded-full bg-emerald-500 hover:bg-emerald-600 transition-colors cursor-pointer"
-            ></button>
+          <!-- 좌측: Mac OS 스타일 3색 닷 (시각적 장식 전용, 기능 제거) -->
+          <div class="flex items-center gap-1.5 shrink-0 select-none pointer-events-none">
+            <span class="w-3 h-3 rounded-full bg-rose-500 block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500 block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500 block"></span>
           </div>
 
           <!-- 중앙: 앱 타이틀 배지 -->
@@ -586,7 +571,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-500 fill-current" viewBox="0 0 24 24">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
             </svg>
-            <span class="tracking-tight">Suno 즉석 플레이어</span>
+            <span class="tracking-tight">Suno 고음질 즉석 플레이어</span>
           </div>
 
           <!-- 우측: 닫기 버튼 -->
@@ -606,17 +591,31 @@
         </div>
 
         <!-- 윈도우 콘텐츠 영역 (고정 규격 475 x 450) -->
-        <div class="flex-grow relative overflow-hidden bg-slate-950 w-full h-[450px]">
+        <div class="flex-grow relative overflow-hidden bg-[#161c36] w-full h-[450px]">
           <iframe
             id="modal-suno-iframe"
             src=""
             title="Suno Player"
             class="w-full h-full border-0"
+            sandbox="allow-scripts allow-same-origin"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen"
             referrerpolicy="no-referrer"
           ></iframe>
+
+          <!-- 곡 제목 하이퍼링크 차단 및 순수 텍스트 표시 오버레이 (Suno 사이트 이동 방지) -->
+          <div
+            id="modal-song-title-overlay"
+            class="absolute left-6 bottom-[121px] max-w-[340px] z-20 pointer-events-auto select-text cursor-default bg-[#161c36] py-0.5 px-1 rounded transition-opacity duration-200"
+            onclick="event.stopPropagation(); event.preventDefault();"
+          >
+            <span
+              id="modal-overlay-title-text"
+              class="text-white font-bold text-base sm:text-lg tracking-tight truncate block select-text cursor-default"
+            ></span>
+          </div>
+
           <!-- 로딩 안내 스피너 -->
-          <div id="modal-iframe-loading" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 z-10 transition-opacity pointer-events-none">
+          <div id="modal-iframe-loading" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 z-30 transition-opacity pointer-events-none">
             <div class="w-9 h-9 border-2 border-rose-500/30 border-t-rose-500 rounded-full animate-spin"></div>
             <p class="text-xs text-slate-400 font-medium">Suno 플레이어 연결 중...</p>
           </div>
@@ -1006,6 +1005,10 @@
             titleEl.textContent = actualTitle;
             titleEl.title = actualTitle;
           }
+          const overlayTitleEl = document.getElementById('modal-overlay-title-text');
+          if (overlayTitleEl) {
+            overlayTitleEl.textContent = actualTitle;
+          }
           if (artistEl) {
             artistEl.textContent = actualArtist;
           }
@@ -1148,16 +1151,21 @@
 
         // 모달 윈도우 표시
         if (fixedPlayerModal) {
+          const overlayTitleEl = document.getElementById('modal-overlay-title-text');
+          const mainTitleEl = document.getElementById('popup-song-title');
+          if (overlayTitleEl && mainTitleEl && mainTitleEl.textContent) {
+            overlayTitleEl.textContent = mainTitleEl.textContent;
+          }
           fixedPlayerModal.classList.remove('hidden');
           fixedPlayerModal.classList.add('flex');
         }
 
         const statusText = document.getElementById('popup-status-text');
-        if (statusText) statusText.textContent = '수노 공식 플레이어로 재생';
+        if (statusText) statusText.textContent = '고정 플레이어 실행 중 (475×495)';
         const btnText = document.getElementById('btn-launch-popup-text');
-        if (btnText) btnText.textContent = 'P L A Y';
+        if (btnText) btnText.textContent = '▶ 플레이어 창 열기';
 
-        showToast('음악 플레이어가 열렸습니다.', 'success');
+        showToast('플레이어가 열렸습니다. (475×495 고정 규격)', 'success');
       }
 
       function reloadPlayerModal() {
