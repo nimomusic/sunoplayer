@@ -338,10 +338,6 @@ function injectSongMeta(html: string, meta: SongDetails): string {
     `id="popup-song-title" title="${escapeHtml(songTitle)}" class="text-base sm:text-lg font-bold text-white tracking-tight truncate select-text">${escapeHtml(songTitle)}</h3>`
   );
   result = result.replace(
-    /id="modal-overlay-title-text"[^>]*>([^<]*)<\/span>/i,
-    `id="modal-overlay-title-text" class="text-white font-bold text-base sm:text-lg tracking-tight truncate block select-text cursor-default">${escapeHtml(songTitle)}</span>`
-  );
-  result = result.replace(
     /id="popup-song-artist"[^>]*>([^<]*)<\/span>/i,
     `id="popup-song-artist" class="text-rose-400 font-semibold truncate max-w-[180px] sm:max-w-[220px]">${escapeHtml(artistName)}</span>`
   );
