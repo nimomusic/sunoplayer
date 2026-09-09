@@ -175,25 +175,10 @@
             <span id="modal-song-title" class="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-[220px]">
               Suno 플레이어
             </span>
-            <span class="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
-              475&times;450 고정
-            </span>
           </div>
 
           <!-- 우측: 별도 창 분리 및 닫기 버튼 -->
           <div class="flex items-center gap-1">
-            <button
-              type="button"
-              onclick="openStandaloneBrowserWindow()"
-              class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              title="새 창으로 팝업 분리"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </button>
             <button
               type="button"
               onclick="closeFixedPlayerModal()"
