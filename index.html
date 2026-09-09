@@ -68,9 +68,42 @@
       .animate-pulse-subtle {
         animation: pulse-subtle 3s ease-in-out infinite;
       }
+      @keyframes phone-rotate {
+        0%, 15% { transform: rotate(0deg); }
+        45%, 55% { transform: rotate(-90deg); }
+        85%, 100% { transform: rotate(0deg); }
+      }
+      .animate-phone-rotate {
+        animation: phone-rotate 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
     </style>
   </head>
   <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white antialiased">
+    <!-- 모바일 가로보기(Landscape) 차단 및 세로 회전 안내 오버레이 -->
+    <div
+      id="mobile-landscape-overlay"
+      class="fixed inset-0 z-[99999] hidden bg-slate-950/98 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center select-none"
+    >
+      <div class="w-20 h-20 rounded-3xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mb-6 shadow-2xl shadow-rose-500/10">
+        <div class="animate-phone-rotate">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+            <path d="M12 18h.01"/>
+          </svg>
+        </div>
+      </div>
+      <h3 class="text-lg sm:text-xl font-bold text-white mb-2 tracking-tight">
+        기기를 세로 모드로 돌려주세요
+      </h3>
+      <p class="text-sm text-slate-400 max-w-xs leading-relaxed break-keep">
+        Suno 플레이어는 <strong class="text-rose-400 font-semibold">세로 화면(Portrait)</strong> 환경에 최적화되어 있어 가로보기를 지원하지 않습니다.
+      </p>
+      <div class="mt-6 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs text-rose-400 font-medium shadow-inner">
+        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+        <span>스마트폰을 세로로 세워주세요</span>
+      </div>
+    </div>
+
     <!-- 배경 장식 글로우 효과 -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
       <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[550px] h-[550px] bg-rose-500/10 rounded-full blur-[120px]"></div>
@@ -504,7 +537,12 @@
       let customDomainValue = '';
       let toastTimeout = null;
 
+      // PC 팝업 크기 고정 및 모바일 가로보기 차단 제어 변수
+      let activeMiniPlayerPopup = null;
+      let popupResizeTimer = null;
+
       // DOM 요소 캐싱
+      const mobileLandscapeOverlay = document.getElementById('mobile-landscape-overlay');
       const modeGenerator = document.getElementById('mode-generator');
       const modePlayer = document.getElementById('mode-player');
       const sunoInput = document.getElementById('suno-input');
@@ -898,17 +936,69 @@
       }
 
       /**
+       * 모바일 기기 여부 판별 (UserAgent 및 터치스크린 특성 결합)
+       */
+      function isMobileDevice() {
+        const uaCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const touchCheck = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        return uaCheck || (touchCheck && window.innerWidth <= 1024);
+      }
+
+      /**
+       * 모바일 환경에서 가로 모드(Landscape) 여부 판별
+       */
+      function isLandscapeMode() {
+        if (!isMobileDevice()) return false;
+        const isLandscapeAspect = window.innerWidth > window.innerHeight;
+        const isLandscapeQuery = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+        return isLandscapeAspect || isLandscapeQuery;
+      }
+
+      /**
+       * 모바일 가로보기 차단 오버레이 표시 및 방향 제어
+       */
+      function checkOrientationAndLock() {
+        if (!mobileLandscapeOverlay) return;
+
+        if (isMobileDevice() && isLandscapeMode()) {
+          // 모바일 기기가 가로로 뉘어졌을 때 화면 전체 차단 오버레이 표시
+          mobileLandscapeOverlay.classList.remove('hidden');
+          mobileLandscapeOverlay.classList.add('flex');
+          document.body.classList.add('overflow-hidden');
+        } else {
+          // 세로 모드 복귀 시 정상 화면 복원
+          mobileLandscapeOverlay.classList.add('hidden');
+          mobileLandscapeOverlay.classList.remove('flex');
+          document.body.classList.remove('overflow-hidden');
+        }
+      }
+
+      /**
        * 독립 팝업 플레이어 열기
-       * PC에서는 메인 카드 상단 헤더 바로 아래에 정확히 팝업이 위치하도록 좌표와 크기 계산
-       * 모바일에서는 안전하게 새 탭/창으로 열어 원본 페이지(하단 버튼들)를 보존
+       * PC에서는 메인 카드 상단 헤더 바로 아래에 정확히 팝업이 위치하며, 창 사이즈 조절 불가(resizable=no & 크기 고정 감시)
+       * 모바일에서는 가로보기를 엄격히 차단하며 세로 화면(Portrait)에서만 재생 허용
        * @param {boolean} isUserClick 사용자가 직접 클릭해서 열었는지 여부
        */
       function openMiniPlayerPopup(isUserClick = true) {
         if (!currentSongId) return;
         const embedUrl = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isMobile = isMobileDevice();
 
         if (isMobile) {
+          // 1. 모바일 환경: 가로 모드인 경우 재생 차단 및 세로 회전 유도
+          if (isLandscapeMode()) {
+            checkOrientationAndLock();
+            showToast('모바일에서는 세로 모드에서만 재생할 수 있습니다.', 'error');
+            return;
+          }
+
+          // 지원 브라우저(Android 등)에서 세로 화면 방향 잠금 시도
+          try {
+            if (screen.orientation && typeof screen.orientation.lock === 'function') {
+              screen.orientation.lock('portrait').catch(() => {});
+            }
+          } catch (e) {}
+
           // 모바일 기기 처리: 사용자가 원본 페이지와 하단 버튼들을 유지한 채 들을 수 있도록 새 창으로 띄움
           const popup = window.open(embedUrl, '_blank');
           const btnText = document.getElementById('btn-launch-popup-text');
@@ -922,9 +1012,10 @@
           return;
         }
 
+        // 2. 컴퓨터(PC) 환경: 창 사이즈 조절이 안 되도록 크기 고정 및 resizable=no 적용
         const playerCard = document.getElementById('popup-player-card');
         
-        // 팝업 창 기본 크기 (Suno 임베드 및 타이틀바/주소창 규격 맞춤: 가로 475px, 세로 450px)
+        // 팝업 창 기본 크기 (Suno 임베드 규격: 가로 475px, 세로 450px 고정)
         let width = 475;
         let height = 450;
         let left = 100;
@@ -955,10 +1046,17 @@
           top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
         }
 
+        // 이전 팝업 크기 감시 인터벌이 있으면 정리
+        if (popupResizeTimer) {
+          clearInterval(popupResizeTimer);
+          popupResizeTimer = null;
+        }
+
+        // PC 팝업: resizable=no, scrollbars=no 설정으로 크기 변경 비활성화
         const popup = window.open(
           embedUrl,
           'SunoMiniPlayer',
-          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`
+          `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=no,scrollbars=no`
         );
 
         if (popup && !popup.closed) {
@@ -968,6 +1066,30 @@
           } catch (e) {
             // 브라우저 권한에 따라 크기 재조정 무시될 수 있음
           }
+
+          activeMiniPlayerPopup = popup;
+          const fixedWidth = width;
+          const fixedHeight = height;
+
+          // PC 브라우저에서 사용자가 창 테두리를 잡아당겨 리사이즈하려 해도 고정 크기 유지
+          popupResizeTimer = setInterval(() => {
+            if (!activeMiniPlayerPopup || activeMiniPlayerPopup.closed) {
+              clearInterval(popupResizeTimer);
+              popupResizeTimer = null;
+              activeMiniPlayerPopup = null;
+              return;
+            }
+            try {
+              if (
+                Math.abs(activeMiniPlayerPopup.outerWidth - fixedWidth) > 6 ||
+                Math.abs(activeMiniPlayerPopup.outerHeight - fixedHeight) > 6
+              ) {
+                activeMiniPlayerPopup.resizeTo(fixedWidth, fixedHeight);
+              }
+            } catch (err) {
+              // cross-origin 보호 시 예외 무시
+            }
+          }, 350);
         }
 
         const btnText = document.getElementById('btn-launch-popup-text');
@@ -1331,7 +1453,19 @@
         initRouter();
       });
 
+      // 모바일 화면 회전 및 리사이즈 감지 (가로보기 차단 오버레이 연동)
+      window.addEventListener('resize', checkOrientationAndLock);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(checkOrientationAndLock, 150);
+      });
+      if (window.matchMedia) {
+        try {
+          window.matchMedia('(orientation: landscape)').addEventListener('change', checkOrientationAndLock);
+        } catch (e) {}
+      }
+
       // 초기 실행
+      checkOrientationAndLock();
       initRouter();
     </script>
   </body>
