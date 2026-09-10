@@ -109,6 +109,49 @@
         }
       }
 
+      /* 세련된 커스텀 네이티브 오디오 시크바 스타일 */
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 9999px;
+        background: #334155;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        margin-top: -5px;
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: #f43f5e;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+        cursor: pointer;
+        transition: transform 0.15s ease, background-color 0.15s ease;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.25);
+        background: #fb7185;
+      }
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        border-radius: 9999px;
+        background: #334155;
+      }
+      input[type="range"]::-moz-range-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: #f43f5e;
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+        cursor: pointer;
+      }
+
       /* =========================================================
          [모바일 가로보기(Landscape) 하드웨어/CSS 레벨 절대 차단]
          모바일 스마트폰이나 태블릿을 가로로 돌리는 즉시 0ms로 오버레이 강제 활성화
@@ -440,75 +483,190 @@
             </div>
           </div>
 
-          <!-- 독립 팝업 플레이어 메인 영역 (Suno 팝업 창 규격에 맞춤) -->
-          <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950/90 border border-slate-700/80 p-5 sm:p-6 flex flex-col items-center justify-center text-center shadow-2xl h-[400px] sm:h-[450px]">
+          <!-- 네이티브 오디오 태그 (스트리밍 프록시 재생) -->
+          <audio id="native-audio" preload="metadata" class="hidden"></audio>
+
+          <!-- 독립 플레이어 메인 영역 -->
+          <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950/90 border border-slate-700/80 p-5 sm:p-7 flex flex-col items-center justify-center text-center shadow-2xl min-h-[460px]">
             <!-- 배경 블러 앰비언트 글로우 -->
             <div id="popup-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-125 pointer-events-none transition-all duration-700"></div>
 
-            <!-- 앨범 커버 아트 (클릭 시 재생) -->
-            <div class="relative z-10 mb-3.5 cursor-pointer group" onclick="openMiniPlayerPopup(true)" title="클릭하여 재생">
-              <div class="w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/70 bg-slate-900 relative">
+            <!-- 앨범 커버 아트 (클릭 시 재생/일시정지 토글) -->
+            <div class="relative z-10 mb-3.5 cursor-pointer group" onclick="togglePlay()" title="재생 / 일시정지 (스페이스바)">
+              <div id="main-cover-wrapper" class="w-40 h-40 sm:w-44 sm:h-44 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 bg-slate-900 relative transition-all duration-300">
                 <img
                   id="popup-cover-img"
                   src=""
                   alt="Album Cover"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <!-- 오버레이 재생 아이콘 -->
+                <!-- 오버레이 재생/일시정지 상태 아이콘 -->
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                  <div class="w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+                  <div id="main-cover-play-badge" class="w-13 h-13 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
+                    <svg id="main-cover-play-icon" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 translate-x-0.5 fill-current" viewBox="0 0 24 24">
                       <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <svg id="main-cover-pause-icon" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 fill-current hidden" viewBox="0 0 24 24">
+                      <rect x="6" y="4" width="4" height="16"></rect>
+                      <rect x="14" y="4" width="4" height="16"></rect>
                     </svg>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 곡 제목 및 아티스트 정보 -->
-            <div class="relative z-10 max-w-sm mb-4 px-2 w-full text-center">
+            <!-- 곡 제목 및 아티스트 정보 (순수 텍스트 표시, 하이퍼링크 및 Suno 리디렉션 100% 제거) -->
+            <div class="relative z-10 max-w-md mb-3.5 px-2 w-full text-center select-text">
               <h3
                 id="popup-song-title"
-                title="음원 정보를 불러오는 중..."
-                class="text-base sm:text-lg font-bold text-white tracking-tight truncate select-text"
+                title="음원 제목"
+                class="text-base sm:text-lg font-bold text-white tracking-tight truncate select-text cursor-default"
               >
                 음원 정보를 불러오는 중...
               </h3>
-              <div class="flex items-center justify-center gap-1.5 mt-1 text-xs sm:text-sm text-slate-300 font-medium">
+              <div class="flex items-center justify-center gap-1.5 mt-1 text-xs sm:text-sm text-slate-300 font-medium select-text">
                 <span class="text-slate-400">by</span>
-                <span id="popup-song-artist" class="text-rose-400 font-semibold truncate max-w-[180px] sm:max-w-[220px]">
+                <span id="popup-song-artist" class="text-rose-400 font-semibold truncate max-w-[200px] sm:max-w-[260px] select-text">
                   Suno Instant Player
                 </span>
-                <span id="popup-song-handle" class="hidden text-slate-400 text-xs font-normal truncate max-w-[120px]"></span>
+                <span id="popup-song-handle" class="hidden text-slate-400 text-xs font-normal truncate max-w-[120px] select-text"></span>
               </div>
               <div id="popup-song-tags-container" class="hidden mt-2 items-center justify-center gap-1.5 flex-wrap"></div>
             </div>
 
-            <!-- 대형 플레이어 실행 버튼 -->
-            <div class="relative z-10 w-full max-w-xs space-y-2.5">
+            <!-- 네이티브 오디오 타임라인 진행바 -->
+            <div class="relative z-10 w-full max-w-xs sm:max-w-sm mb-3.5 px-2">
+              <div class="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 font-mono mb-1.5 select-none">
+                <span id="main-time-current">0:00</span>
+                <span id="main-time-duration">0:00</span>
+              </div>
+              <div class="relative flex items-center">
+                <input
+                  type="range"
+                  id="main-seek-bar"
+                  min="0"
+                  max="100"
+                  value="0"
+                  step="0.1"
+                  class="w-full cursor-pointer h-2 bg-slate-700/80 rounded-lg appearance-none accent-rose-500 transition-colors"
+                  oninput="onSeekInput(event)"
+                  onchange="onSeekChange(event)"
+                  title="타임라인 이동"
+                />
+              </div>
+            </div>
+
+            <!-- 고감도 대형 컨트롤 덱 (넓은 터치/클릭 인식 반경) -->
+            <div class="relative z-10 flex items-center justify-center gap-3 sm:gap-4 mb-3.5 select-none">
+              <!-- 10초 뒤로 -->
               <button
                 type="button"
-                id="btn-launch-popup"
-                onclick="openMiniPlayerPopup(true)"
-                class="w-full py-3 sm:py-3.5 px-5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold text-sm sm:text-base shadow-lg shadow-rose-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                onclick="seekRelative(-10)"
+                class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow"
+                title="10초 뒤로"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                  <text x="12" y="16" font-size="8" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle" stroke="none">10</text>
                 </svg>
-                <span id="btn-launch-popup-text">Suno 플레이어로 감상하기</span>
               </button>
 
-              <!-- 상태 표시 -->
+              <!-- 초대형 중앙 재생 버튼 (60x60, 즉각적인 반응) -->
+              <button
+                type="button"
+                id="main-play-btn"
+                onclick="togglePlay()"
+                class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white flex items-center justify-center shadow-xl shadow-rose-600/40 active:scale-95 transition-all cursor-pointer"
+                title="재생 / 일시정지 (스페이스바)"
+              >
+                <!-- 재생 아이콘 -->
+                <svg id="main-play-icon" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 sm:w-8 sm:h-8 translate-x-0.5 fill-current" viewBox="0 0 24 24">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <!-- 일시정지 아이콘 -->
+                <svg id="main-pause-icon" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 sm:w-8 sm:h-8 fill-current hidden" viewBox="0 0 24 24">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              </button>
+
+              <!-- 10초 앞으로 -->
+              <button
+                type="button"
+                onclick="seekRelative(10)"
+                class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow"
+                title="10초 앞으로"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.57 2.57L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <text x="12" y="16" font-size="8" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle" stroke="none">10</text>
+                </svg>
+              </button>
+
+              <!-- 한 곡 반복 토글 -->
+              <button
+                type="button"
+                id="main-loop-btn"
+                onclick="toggleLoop()"
+                class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow"
+                title="한 곡 반복"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m17 2 4 4-4 4"/>
+                  <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+                  <path d="m7 22-4-4 4-4"/>
+                  <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+                </svg>
+              </button>
+
+              <!-- 음소거 토글 -->
+              <button
+                type="button"
+                id="main-volume-btn"
+                onclick="toggleMute()"
+                class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow"
+                title="음소거 토글"
+              >
+                <svg id="main-volume-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+                <svg id="main-volume-mute-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              </button>
+            </div>
+
+            <!-- 하단 창 모드 열기 버튼 (475x495 고정 규격 창) -->
+            <div class="relative z-10 w-full max-w-xs space-y-2">
+              <button
+                type="button"
+                onclick="openPlayerModal()"
+                class="w-full py-2.5 px-4 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 hover:text-white font-medium text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                <span>창 모드로 크게 보기 (475×495)</span>
+              </button>
+
               <div class="flex items-center justify-center gap-2 text-[11px] text-slate-400">
                 <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  <span id="popup-status-text">음원 준비 완료</span>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span id="popup-status-text">초고음질 무손실 스트리밍 준비 완료</span>
                 </span>
               </div>
             </div>
           </div>
 
-          <!-- 플레이어 하단: 무료 스트리밍 링크 (팝업 하단에 바로 맞춤) -->
+          <!-- 플레이어 하단: 무료 스트리밍 링크 -->
           <div id="direct-stream-box" class="mt-2.5 sm:mt-3 p-3 bg-slate-900/90 rounded-xl border border-slate-700/60 flex items-center justify-center text-xs">
             <a
               id="stream-link"
@@ -546,7 +704,7 @@
       </div>
     </main>
 
-    <!-- [4. 인앱 고정 플레이어 모달 (PC 리사이즈 절대 차단 475x495 & 모바일 가로보기 차단)] -->
+    <!-- [4. 인앱 고정 플레이어 모달 (PC 475x495 고정 & 모바일 가로보기 차단 & ZERO IFRAME 네이티브 플레이어)] -->
     <div
       id="fixed-player-modal"
       class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 transition-all duration-300 select-none"
@@ -557,10 +715,10 @@
         class="fixed-player-window bg-slate-950 border border-slate-700/80 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden transform transition-all duration-200"
         onclick="event.stopPropagation()"
       >
-        <!-- 윈도우 상단 타이틀바 (Mac OS 스타일 & 앱 타이틀) -->
+        <!-- 윈도우 상단 타이틀바 (Mac OS 스타일 3색 닷: 시각적 장식 전용, 기능 제거 완료) -->
         <div class="h-11 bg-slate-900/95 border-b border-slate-800 px-3.5 flex items-center justify-between shrink-0 select-none">
-          <!-- 좌측: Mac OS 스타일 3색 닷 (시각적 장식 전용, 기능 제거) -->
-          <div class="flex items-center gap-1.5 shrink-0 select-none pointer-events-none">
+          <!-- 좌측: Mac OS 스타일 3색 닷 (시각적 장식 전용, 기능 100% 제거) -->
+          <div class="flex items-center gap-1.5 shrink-0 select-none pointer-events-none" title="Mac Style Window Accent">
             <span class="w-3 h-3 rounded-full bg-rose-500 block"></span>
             <span class="w-3 h-3 rounded-full bg-amber-500 block"></span>
             <span class="w-3 h-3 rounded-full bg-emerald-500 block"></span>
@@ -580,7 +738,7 @@
               type="button"
               onclick="closePlayerModal()"
               title="닫기 (ESC)"
-              class="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -590,36 +748,163 @@
           </div>
         </div>
 
-        <!-- 윈도우 콘텐츠 영역 (고정 규격 475 x 450) -->
-        <div class="flex-grow relative overflow-hidden bg-[#161c36] w-full h-[450px]">
-          <iframe
-            id="modal-suno-iframe"
-            src=""
-            title="Suno Player"
-            class="w-full h-full border-0"
-            sandbox="allow-scripts allow-same-origin"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen"
-            referrerpolicy="no-referrer"
-          ></iframe>
+        <!-- 윈도우 콘텐츠 영역 (고정 규격 475 x 450, 순수 네이티브 HTML5 오디오 엔진, IFRAME ZERO) -->
+        <div class="flex-grow relative overflow-hidden bg-slate-950/95 w-full h-[450px] p-5 flex flex-col items-center justify-between text-center select-none">
+          <!-- 배경 앰비언트 블러 -->
+          <div id="modal-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-25 blur-3xl scale-125 pointer-events-none transition-all duration-700"></div>
 
-          <!-- 곡 제목 클릭 차단 투명 쉴드 (Suno 원본 타이틀이 100% 깔끔하게 보이며, 클릭 시 Suno 사이트로 이동하는 것만 완벽 차단) -->
-          <div
-            id="modal-song-title-overlay"
-            class="absolute left-0 bottom-[95px] w-[85%] h-11 z-20 pointer-events-auto cursor-default bg-transparent select-none"
-            onclick="event.stopPropagation(); event.preventDefault();"
-          ></div>
+          <!-- 1. 앨범 커버 아트 (클릭 시 재생/일시정지 토글) -->
+          <div class="relative z-10 mt-1 cursor-pointer group" onclick="togglePlay()" title="재생 / 일시정지 (스페이스바)">
+            <div id="modal-cover-wrapper" class="w-36 h-36 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 bg-slate-900 relative transition-all duration-300">
+              <img
+                id="modal-cover-img"
+                src=""
+                alt="Album Cover"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <!-- 오버레이 재생/일시정지 배지 -->
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                <div class="w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                  <svg id="modal-cover-play-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 translate-x-0.5 fill-current" viewBox="0 0 24 24">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <svg id="modal-cover-pause-icon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current hidden" viewBox="0 0 24 24">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <!-- 하단 Suno 로고 클릭 차단 투명 쉴드 -->
-          <div
-            id="modal-suno-logo-overlay"
-            class="absolute right-0 bottom-0 w-36 h-12 z-20 pointer-events-auto cursor-default bg-transparent select-none"
-            onclick="event.stopPropagation(); event.preventDefault();"
-          ></div>
+          <!-- 2. 곡 제목 & 아티스트 (하이퍼링크 100% 제거, 순수 텍스트 표시로 외부 이동 절대 차단) -->
+          <div class="relative z-10 max-w-[400px] w-full px-2 text-center select-text">
+            <h3
+              id="modal-song-title"
+              title="음원 제목"
+              class="text-base sm:text-lg font-bold text-white tracking-tight truncate select-text cursor-default"
+            >
+              음원 정보를 불러오는 중...
+            </h3>
+            <div class="flex items-center justify-center gap-1.5 mt-1 text-xs sm:text-sm text-slate-300 font-medium select-text">
+              <span class="text-slate-400">by</span>
+              <span id="modal-song-artist" class="text-rose-400 font-semibold truncate max-w-[240px] select-text">
+                Suno Instant Player
+              </span>
+            </div>
+            <div id="modal-song-tags" class="hidden mt-1.5 items-center justify-center gap-1.5 flex-wrap"></div>
+          </div>
 
-          <!-- 로딩 안내 스피너 -->
-          <div id="modal-iframe-loading" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 z-30 transition-opacity pointer-events-none">
-            <div class="w-9 h-9 border-2 border-rose-500/30 border-t-rose-500 rounded-full animate-spin"></div>
-            <p class="text-xs text-slate-400 font-medium">Suno 플레이어 연결 중...</p>
+          <!-- 3. 인터랙티브 타임라인 진행바 -->
+          <div class="relative z-10 w-full max-w-[390px] px-1">
+            <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono mb-1.5 select-none">
+              <span id="modal-time-current">0:00</span>
+              <span id="modal-time-duration">0:00</span>
+            </div>
+            <input
+              type="range"
+              id="modal-seek-bar"
+              min="0"
+              max="100"
+              value="0"
+              step="0.1"
+              class="w-full cursor-pointer h-2 bg-slate-700/80 rounded-lg appearance-none accent-rose-500 transition-colors"
+              oninput="onSeekInput(event)"
+              onchange="onSeekChange(event)"
+              title="타임라인 이동"
+            />
+          </div>
+
+          <!-- 4. 고감도 대형 컨트롤 덱 (넓은 터치/클릭 인식 반경) -->
+          <div class="relative z-10 flex items-center justify-center gap-4 select-none mb-1">
+            <!-- 10초 뒤로 -->
+            <button
+              type="button"
+              onclick="seekRelative(-10)"
+              class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow"
+              title="10초 뒤로"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <text x="12" y="16" font-size="8" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle" stroke="none">10</text>
+              </svg>
+            </button>
+
+            <!-- 초대형 중앙 재생 버튼 (56x56 즉각 인식) -->
+            <button
+              type="button"
+              id="modal-play-btn"
+              onclick="togglePlay()"
+              class="w-14 h-14 rounded-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white flex items-center justify-center shadow-xl shadow-rose-600/40 active:scale-95 transition-all cursor-pointer"
+              title="재생 / 일시정지 (스페이스바)"
+            >
+              <svg id="modal-play-icon" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 translate-x-0.5 fill-current" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <svg id="modal-pause-icon" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 fill-current hidden" viewBox="0 0 24 24">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+            </button>
+
+            <!-- 10초 앞으로 -->
+            <button
+              type="button"
+              onclick="seekRelative(10)"
+              class="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow"
+              title="10초 앞으로"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.57 2.57L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <text x="12" y="16" font-size="8" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle" stroke="none">10</text>
+              </svg>
+            </button>
+
+            <!-- 한 곡 반복 토글 -->
+            <button
+              type="button"
+              id="modal-loop-btn"
+              onclick="toggleLoop()"
+              class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow"
+              title="한 곡 반복"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m17 2 4 4-4 4"/>
+                <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+                <path d="m7 22-4-4 4-4"/>
+                <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+              </svg>
+            </button>
+
+            <!-- 음소거 토글 -->
+            <button
+              type="button"
+              id="modal-volume-btn"
+              onclick="toggleMute()"
+              class="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow"
+              title="음소거 토글"
+            >
+              <svg id="modal-volume-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+              </svg>
+              <svg id="modal-volume-mute-icon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- 5. 고음질 무손실 스트리밍 상태 뱃지 (프롬프트 100% 비노출) -->
+          <div class="relative z-10 flex items-center justify-center gap-2 text-[11px] text-slate-400 pb-1">
+            <span class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>초고음질 무손실 스트리밍 (프롬프트 100% 비노출)</span>
+            </span>
           </div>
         </div>
       </div>
@@ -936,42 +1221,286 @@
         }, 100);
       }
 
+      // =========================================================
+      // [네이티브 HTML5 오디오 엔진 (NO IFRAME / ZERO REDIRECTION)]
+      // =========================================================
+      const nativeAudio = document.getElementById('native-audio');
+      const fixedPlayerModal = document.getElementById('fixed-player-modal');
+      let isSeeking = false;
+      let isAudioInitialized = false;
+
+      function formatTime(seconds) {
+        if (isNaN(seconds) || seconds < 0) return '0:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+
+      function updateTimeDisplays(current, duration) {
+        const curStr = formatTime(current);
+        const durStr = formatTime(duration);
+
+        const mainCur = document.getElementById('main-time-current');
+        const mainDur = document.getElementById('main-time-duration');
+        const modalCur = document.getElementById('modal-time-current');
+        const modalDur = document.getElementById('modal-time-duration');
+
+        if (mainCur) mainCur.textContent = curStr;
+        if (mainDur) mainDur.textContent = durStr;
+        if (modalCur) modalCur.textContent = curStr;
+        if (modalDur) modalDur.textContent = durStr;
+      }
+
+      function updatePlayStateUI(isPlaying) {
+        // 메인 플레이어 버튼 아이콘 토글
+        const mainPlayIcon = document.getElementById('main-play-icon');
+        const mainPauseIcon = document.getElementById('main-pause-icon');
+        const mainCoverPlayIcon = document.getElementById('main-cover-play-icon');
+        const mainCoverPauseIcon = document.getElementById('main-cover-pause-icon');
+        const mainCoverWrapper = document.getElementById('main-cover-wrapper');
+
+        // 모달 플레이어 버튼 아이콘 토글
+        const modalPlayIcon = document.getElementById('modal-play-icon');
+        const modalPauseIcon = document.getElementById('modal-pause-icon');
+        const modalCoverPlayIcon = document.getElementById('modal-cover-play-icon');
+        const modalCoverPauseIcon = document.getElementById('modal-cover-pause-icon');
+        const modalCoverWrapper = document.getElementById('modal-cover-wrapper');
+
+        // 상태 텍스트
+        const statusText = document.getElementById('popup-status-text');
+
+        if (isPlaying) {
+          if (mainPlayIcon) mainPlayIcon.classList.add('hidden');
+          if (mainPauseIcon) mainPauseIcon.classList.remove('hidden');
+          if (mainCoverPlayIcon) mainCoverPlayIcon.classList.add('hidden');
+          if (mainCoverPauseIcon) mainCoverPauseIcon.classList.remove('hidden');
+          if (mainCoverWrapper) {
+            mainCoverWrapper.classList.add('ring-2', 'ring-rose-500/70', 'shadow-rose-500/30');
+          }
+
+          if (modalPlayIcon) modalPlayIcon.classList.add('hidden');
+          if (modalPauseIcon) modalPauseIcon.classList.remove('hidden');
+          if (modalCoverPlayIcon) modalCoverPlayIcon.classList.add('hidden');
+          if (modalCoverPauseIcon) modalCoverPauseIcon.classList.remove('hidden');
+          if (modalCoverWrapper) {
+            modalCoverWrapper.classList.add('ring-2', 'ring-rose-500/70', 'shadow-rose-500/30');
+          }
+
+          if (statusText) statusText.textContent = '초고음질 스트리밍 재생 중';
+        } else {
+          if (mainPlayIcon) mainPlayIcon.classList.remove('hidden');
+          if (mainPauseIcon) mainPauseIcon.classList.add('hidden');
+          if (mainCoverPlayIcon) mainCoverPlayIcon.classList.remove('hidden');
+          if (mainCoverPauseIcon) mainCoverPauseIcon.classList.add('hidden');
+          if (mainCoverWrapper) {
+            mainCoverWrapper.classList.remove('ring-2', 'ring-rose-500/70', 'shadow-rose-500/30');
+          }
+
+          if (modalPlayIcon) modalPlayIcon.classList.remove('hidden');
+          if (modalPauseIcon) modalPauseIcon.classList.add('hidden');
+          if (modalCoverPlayIcon) modalCoverPlayIcon.classList.remove('hidden');
+          if (modalCoverPauseIcon) modalCoverPauseIcon.classList.add('hidden');
+          if (modalCoverWrapper) {
+            modalCoverWrapper.classList.remove('ring-2', 'ring-rose-500/70', 'shadow-rose-500/30');
+          }
+
+          if (statusText) statusText.textContent = '일시 정지됨';
+        }
+      }
+
+      function setupNativeAudioEngine(songId) {
+        if (!nativeAudio) return;
+
+        const streamUrl = `/api/audio-stream?id=${encodeURIComponent(songId)}`;
+        if (nativeAudio.dataset.loadedSongId !== songId) {
+          nativeAudio.dataset.loadedSongId = songId;
+          nativeAudio.src = streamUrl;
+          nativeAudio.load();
+        }
+
+        if (isAudioInitialized) return;
+        isAudioInitialized = true;
+
+        nativeAudio.addEventListener('loadedmetadata', () => {
+          updateTimeDisplays(nativeAudio.currentTime, nativeAudio.duration);
+        });
+
+        nativeAudio.addEventListener('timeupdate', () => {
+          if (isSeeking) return;
+          const current = nativeAudio.currentTime;
+          const duration = nativeAudio.duration || 1;
+          const percent = (current / duration) * 100;
+
+          const mainSeek = document.getElementById('main-seek-bar');
+          const modalSeek = document.getElementById('modal-seek-bar');
+          if (mainSeek) mainSeek.value = percent;
+          if (modalSeek) modalSeek.value = percent;
+
+          updateTimeDisplays(current, nativeAudio.duration);
+        });
+
+        nativeAudio.addEventListener('play', () => {
+          updatePlayStateUI(true);
+        });
+
+        nativeAudio.addEventListener('pause', () => {
+          updatePlayStateUI(false);
+        });
+
+        nativeAudio.addEventListener('ended', () => {
+          if (!nativeAudio.loop) {
+            updatePlayStateUI(false);
+            const mainSeek = document.getElementById('main-seek-bar');
+            const modalSeek = document.getElementById('modal-seek-bar');
+            if (mainSeek) mainSeek.value = 0;
+            if (modalSeek) modalSeek.value = 0;
+            updateTimeDisplays(0, nativeAudio.duration);
+          }
+        });
+
+        nativeAudio.addEventListener('error', (e) => {
+          console.warn('Audio stream playback note:', e);
+          const statusText = document.getElementById('popup-status-text');
+          if (statusText) statusText.textContent = '음원 스트림 버퍼링 중...';
+        });
+      }
+
+      async function togglePlay() {
+        if (!nativeAudio) return;
+        if (!currentSongId) return;
+
+        setupNativeAudioEngine(currentSongId);
+
+        try {
+          if (nativeAudio.paused) {
+            await nativeAudio.play();
+          } else {
+            nativeAudio.pause();
+          }
+        } catch (err) {
+          console.warn('Playback action note:', err);
+        }
+      }
+
+      function seekRelative(seconds) {
+        if (!nativeAudio) return;
+        setupNativeAudioEngine(currentSongId);
+        const duration = nativeAudio.duration || 0;
+        if (duration <= 0) return;
+        nativeAudio.currentTime = Math.max(0, Math.min(duration, nativeAudio.currentTime + seconds));
+      }
+
+      function onSeekInput(event) {
+        isSeeking = true;
+        const val = parseFloat(event.target.value);
+
+        // 양쪽 슬라이더 동기화
+        const mainSeek = document.getElementById('main-seek-bar');
+        const modalSeek = document.getElementById('modal-seek-bar');
+        if (mainSeek && event.target !== mainSeek) mainSeek.value = val;
+        if (modalSeek && event.target !== modalSeek) modalSeek.value = val;
+
+        const duration = nativeAudio ? (nativeAudio.duration || 0) : 0;
+        const targetTime = (val / 100) * duration;
+        updateTimeDisplays(targetTime, duration);
+      }
+
+      function onSeekChange(event) {
+        if (!nativeAudio) return;
+        setupNativeAudioEngine(currentSongId);
+        const val = parseFloat(event.target.value);
+        const duration = nativeAudio.duration || 0;
+        if (duration > 0) {
+          nativeAudio.currentTime = (val / 100) * duration;
+        }
+        isSeeking = false;
+      }
+
+      function toggleLoop() {
+        if (!nativeAudio) return;
+        nativeAudio.loop = !nativeAudio.loop;
+
+        const mainBtn = document.getElementById('main-loop-btn');
+        const modalBtn = document.getElementById('modal-loop-btn');
+
+        [mainBtn, modalBtn].forEach(btn => {
+          if (!btn) return;
+          if (nativeAudio.loop) {
+            btn.classList.add('text-rose-500', 'bg-rose-500/20', 'border', 'border-rose-500/40');
+            btn.classList.remove('text-slate-400');
+          } else {
+            btn.classList.remove('text-rose-500', 'bg-rose-500/20', 'border', 'border-rose-500/40');
+            btn.classList.add('text-slate-400');
+          }
+        });
+
+        showToast(nativeAudio.loop ? '한 곡 반복이 활성화되었습니다.' : '한 곡 반복이 해제되었습니다.', 'info');
+      }
+
+      function toggleMute() {
+        if (!nativeAudio) return;
+        nativeAudio.muted = !nativeAudio.muted;
+
+        const mainVolIcon = document.getElementById('main-volume-icon');
+        const mainMuteIcon = document.getElementById('main-volume-mute-icon');
+        const modalVolIcon = document.getElementById('modal-volume-icon');
+        const modalMuteIcon = document.getElementById('modal-volume-mute-icon');
+
+        if (nativeAudio.muted) {
+          if (mainVolIcon) mainVolIcon.classList.add('hidden');
+          if (mainMuteIcon) mainMuteIcon.classList.remove('hidden');
+          if (modalVolIcon) modalVolIcon.classList.add('hidden');
+          if (modalMuteIcon) modalMuteIcon.classList.remove('hidden');
+        } else {
+          if (mainVolIcon) mainVolIcon.classList.remove('hidden');
+          if (mainMuteIcon) mainMuteIcon.classList.add('hidden');
+          if (modalVolIcon) modalVolIcon.classList.remove('hidden');
+          if (modalMuteIcon) modalMuteIcon.classList.add('hidden');
+        }
+      }
+
       /**
-       * 플레이어 감상 모드 UI 활성화 (방법 A 적용)
+       * 플레이어 감상 모드 UI 활성화
        */
       async function renderPlayerMode(songId) {
         currentSongId = songId;
         modeGenerator.classList.add('hidden');
         modePlayer.classList.remove('hidden');
 
+        // 메인 플레이어 카드 요소
         const coverImg = document.getElementById('popup-cover-img');
         const bgBlur = document.getElementById('popup-bg-blur');
         const titleEl = document.getElementById('popup-song-title');
         const artistEl = document.getElementById('popup-song-artist');
         const handleEl = document.getElementById('popup-song-handle');
         const tagsContainer = document.getElementById('popup-song-tags-container');
-        const btnText = document.getElementById('btn-launch-popup-text');
         const statusText = document.getElementById('popup-status-text');
 
-        // 서버 렌더링된 실제 제목 및 아티스트 확인
-        const existingTitle = titleEl ? titleEl.textContent.trim() : '';
-        const existingArtist = artistEl ? artistEl.textContent.trim() : '';
-        const hasServerTitle = existingTitle && !existingTitle.includes('음원 정보') && !existingTitle.includes('불러오는');
+        // 모달 플레이어 창 요소
+        const modalCover = document.getElementById('modal-cover-img');
+        const modalBlur = document.getElementById('modal-bg-blur');
+        const modalTitle = document.getElementById('modal-song-title');
+        const modalArtist = document.getElementById('modal-song-artist');
+        const modalTags = document.getElementById('modal-song-tags');
 
-        // 기본값 설정 (Suno CDN 구조)
+        // 기본 커버 이미지 설정
         const defaultCover = `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
-        if (coverImg && (!coverImg.src || coverImg.src.includes('placeholder') || !coverImg.src.includes(songId))) {
-          coverImg.src = defaultCover;
-        }
+        if (coverImg) coverImg.src = defaultCover;
+        if (modalCover) modalCover.src = defaultCover;
         if (bgBlur) bgBlur.style.backgroundImage = `url('${defaultCover}')`;
+        if (modalBlur) modalBlur.style.backgroundImage = `url('${defaultCover}')`;
 
-        if (!hasServerTitle) {
-          if (titleEl) {
-            titleEl.textContent = '음원 정보를 불러오는 중...';
-            titleEl.title = '음원 정보를 불러오는 중...';
-          }
-          if (artistEl) artistEl.textContent = 'Suno Creator';
+        if (titleEl) {
+          titleEl.textContent = '음원 정보를 불러오는 중...';
+          titleEl.title = '음원 정보를 불러오는 중...';
         }
+        if (modalTitle) {
+          modalTitle.textContent = '음원 정보를 불러오는 중...';
+          modalTitle.title = '음원 정보를 불러오는 중...';
+        }
+        if (artistEl) artistEl.textContent = 'Suno Creator';
+        if (modalArtist) modalArtist.textContent = 'Suno Creator';
+
         if (handleEl) {
           handleEl.textContent = '';
           handleEl.classList.add('hidden');
@@ -981,8 +1510,15 @@
           tagsContainer.classList.add('hidden');
           tagsContainer.classList.remove('flex');
         }
-        if (btnText) btnText.textContent = 'Suno 플레이어로 감상하기';
-        if (statusText) statusText.textContent = '음원 준비 완료';
+        if (modalTags) {
+          modalTags.innerHTML = '';
+          modalTags.classList.add('hidden');
+          modalTags.classList.remove('flex');
+        }
+        if (statusText) statusText.textContent = '초고음질 무손실 스트리밍 준비 완료';
+
+        // 오디오 태그 초기화
+        setupNativeAudioEngine(songId);
 
         // 메타데이터 비동기 로드
         let meta = songDataCache[songId];
@@ -1000,69 +1536,79 @@
         }
 
         if (meta) {
-          const actualTitle = meta.title || (hasServerTitle ? existingTitle : `Suno Track (${songId.slice(0, 8)})`);
-          const actualArtist = meta.artist || (existingArtist && existingArtist !== 'Suno Instant Player' ? existingArtist : 'Suno Creator');
+          const actualTitle = meta.title || `Suno Track (${songId.slice(0, 8)})`;
+          const actualArtist = meta.artist || 'Suno Creator';
 
           if (titleEl) {
             titleEl.textContent = actualTitle;
             titleEl.title = actualTitle;
           }
-          if (artistEl) {
-            artistEl.textContent = actualArtist;
+          if (modalTitle) {
+            modalTitle.textContent = actualTitle;
+            modalTitle.title = actualTitle;
           }
+          if (artistEl) artistEl.textContent = actualArtist;
+          if (modalArtist) modalArtist.textContent = actualArtist;
+
           if (meta.handle && handleEl) {
             handleEl.textContent = meta.handle;
             handleEl.classList.remove('hidden');
           }
-          if (meta.tags && tagsContainer) {
+
+          if (meta.tags) {
             const tagList = meta.tags
               .split(',')
               .map(t => t.trim())
               .filter(Boolean)
               .slice(0, 3);
             if (tagList.length > 0) {
-              tagsContainer.innerHTML = tagList
+              const tagsHtml = tagList
                 .map(
                   tag =>
                     `<span class="px-2 py-0.5 rounded-full bg-slate-800/90 border border-slate-700/70 text-slate-300 text-[10px] font-medium tracking-wide">#${tag}</span>`
                 )
                 .join('');
-              tagsContainer.classList.remove('hidden');
-              tagsContainer.classList.add('flex');
+
+              if (tagsContainer) {
+                tagsContainer.innerHTML = tagsHtml;
+                tagsContainer.classList.remove('hidden');
+                tagsContainer.classList.add('flex');
+              }
+              if (modalTags) {
+                modalTags.innerHTML = tagsHtml;
+                modalTags.classList.remove('hidden');
+                modalTags.classList.add('flex');
+              }
             }
           }
-          if (meta.imageUrl && coverImg) {
-            coverImg.src = meta.imageUrl;
+
+          if (meta.imageUrl) {
+            if (coverImg) coverImg.src = meta.imageUrl;
+            if (modalCover) modalCover.src = meta.imageUrl;
             if (bgBlur) bgBlur.style.backgroundImage = `url('${meta.imageUrl}')`;
+            if (modalBlur) modalBlur.style.backgroundImage = `url('${meta.imageUrl}')`;
           }
+
           document.title = `${actualTitle} - ${actualArtist} | Suno 즉석 플레이어`;
-          // 클라이언트 Open Graph 메타태그 실시간 동기화
           updateClientMetaTags(meta);
         } else {
-          const finalTitle = hasServerTitle ? existingTitle : `Suno 음원 (${songId.slice(0, 8)})`;
-          const finalArtist = existingArtist && existingArtist !== 'Suno Instant Player' ? existingArtist : 'Suno Creator';
-          if (titleEl) {
-            titleEl.textContent = finalTitle;
-            titleEl.title = finalTitle;
-          }
-          if (artistEl) {
-            artistEl.textContent = finalArtist;
-          }
+          const finalTitle = `Suno Track (${songId.slice(0, 8)})`;
+          const finalArtist = 'Suno Creator';
+          if (titleEl) titleEl.textContent = finalTitle;
+          if (modalTitle) modalTitle.textContent = finalTitle;
+          if (artistEl) artistEl.textContent = finalArtist;
+          if (modalArtist) modalArtist.textContent = finalArtist;
         }
 
-        // 모바일 기기 판별:
+        // 데스크톱 환경에서는 즉각 모달 창을 지원
         const isMobile = isMobileDevice();
         if (!isMobile) {
-          // PC 환경에서는 메인 카드가 준비되면 바로 고정 팝업 플레이어 열기
-          openMiniPlayerPopup(false);
-        } else {
-          if (btnText) btnText.textContent = 'P L A Y';
-          if (statusText) statusText.textContent = '수노 공식 플레이어로 재생';
+          openPlayerModal();
         }
       }
 
       /**
-       * 모바일 / 터치 기기 여부 판별 (UserAgent 및 터치스크린 특성 결합)
+       * 모바일 / 터치 기기 여부 판별
        */
       function isMobileDevice() {
         const uaCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1076,7 +1622,6 @@
 
       /**
        * 모바일 환경에서 가로 모드(Landscape) 여부 판별
-       * 스마트폰이나 모바일 기기를 옆으로 뉘었을 때 정확히 감지
        */
       function isLandscapeMode() {
         const isLandscapeAspect = window.innerWidth > window.innerHeight;
@@ -1086,93 +1631,45 @@
         if (isMobileDevice()) {
           return isLandscape;
         }
-        // 데스크톱 브라우저 창 높이가 비정상적으로 납작한 경우
         return isLandscape && (window.innerHeight <= 620);
       }
 
       /**
-       * 모바일 가로보기 차단 오버레이 표시 및 방향 제어
+       * 모바일 가로보기 차단 오버레이 제어
        */
       function checkOrientationAndLock() {
         if (!mobileLandscapeOverlay) return;
 
         if (isLandscapeMode()) {
-          // 모바일 기기가 가로로 뉘어졌을 때 화면 전체 차단 오버레이 표시
           mobileLandscapeOverlay.classList.remove('hidden');
           mobileLandscapeOverlay.classList.add('flex');
           document.body.classList.add('overflow-hidden');
-          if (modalSunoIframe && fixedPlayerModal && !fixedPlayerModal.classList.contains('hidden')) {
+          if (fixedPlayerModal && !fixedPlayerModal.classList.contains('hidden')) {
             closePlayerModal();
           }
         } else {
-          // 세로 모드 복귀 시 정상 화면 복원
           mobileLandscapeOverlay.classList.add('hidden');
           mobileLandscapeOverlay.classList.remove('flex');
           document.body.classList.remove('overflow-hidden');
         }
       }
 
-      // =========================================================
-      // [인앱 고정 플레이어 모달 제어 (PC 475x495 고정 & Suno 공식 미니 플레이어)]
-      // =========================================================
-      const fixedPlayerModal = document.getElementById('fixed-player-modal');
-      const modalSunoIframe = document.getElementById('modal-suno-iframe');
-      const modalIframeLoading = document.getElementById('modal-iframe-loading');
-
       /**
-       * 인앱 고정 플레이어 모달 열기
-       * - PC: 마우스 드래그로 사이즈 조절 절대 불가 (475x495 CSS 완벽 고정)
-       * - 모바일: 세로 전용 고정, 가로로 돌리면 오버레이 차단 즉각 활성화
-       * - 엔진: Suno 공식 미니 플레이어 (프롬프트 100% 미노출 & 100% 정상 재생)
+       * 인앱 고정 플레이어 모달 열기 (475x495 고정 규격 창)
        */
       function openPlayerModal() {
         if (!currentSongId) return;
 
-        // 모바일 가로 모드 검사
         if (isLandscapeMode()) {
           checkOrientationAndLock();
           showToast('모바일에서는 세로 모드에서만 플레이어를 감상할 수 있습니다.', 'error');
           return;
         }
 
-        const embedUrl = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
-
-        if (modalIframeLoading) {
-          modalIframeLoading.classList.remove('hidden');
-        }
-
-        if (modalSunoIframe) {
-          if (modalSunoIframe.src !== embedUrl) {
-            modalSunoIframe.src = embedUrl;
-          }
-        }
-
-        // 모달 윈도우 표시
         if (fixedPlayerModal) {
           fixedPlayerModal.classList.remove('hidden');
           fixedPlayerModal.classList.add('flex');
         }
-
-        const statusText = document.getElementById('popup-status-text');
-        if (statusText) statusText.textContent = '수노 공식 플레이어로 재생';
-        const btnText = document.getElementById('btn-launch-popup-text');
-        if (btnText) btnText.textContent = 'P L A Y';
-
-        showToast('플레이어가 열렸습니다.', 'success');
-      }
-
-      function reloadPlayerModal() {
-        if (!modalSunoIframe || !currentSongId) return;
-        if (modalIframeLoading) modalIframeLoading.classList.remove('hidden');
-        modalSunoIframe.src = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
-        showToast('플레이어를 새로고침했습니다.', 'info');
-      }
-
-      /**
-       * 기존 openMiniPlayerPopup 호환 (버튼 클릭 시 모달 열기)
-       */
-      function openMiniPlayerPopup(isUserClick = true) {
-        openPlayerModal();
       }
 
       /**
@@ -1182,11 +1679,6 @@
         if (!fixedPlayerModal) return;
         fixedPlayerModal.classList.add('hidden');
         fixedPlayerModal.classList.remove('flex');
-
-        // 오디오 즉시 정지를 위해 빈 페이지 로드
-        if (modalSunoIframe) {
-          modalSunoIframe.src = 'about:blank';
-        }
       }
 
       function handleModalBackdropClick(event) {
@@ -1195,28 +1687,28 @@
         }
       }
 
-      // iframe 로드 완료 시 로딩 스피너 숨김
-      if (modalSunoIframe) {
-        modalSunoIframe.addEventListener('load', () => {
-          if (modalIframeLoading) modalIframeLoading.classList.add('hidden');
-        });
-      }
-
-      // ESC 키로 모달 닫기
+      // 키보드 단축키 지원 (스페이스바: 재생/일시정지, 좌우 화살표: 5초 탐색, ESC: 창 닫기)
       window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && fixedPlayerModal && !fixedPlayerModal.classList.contains('hidden')) {
+        // 인풋이나 텍스트에어리어에서 타이핑 중인 경우 스킵
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea') return;
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          togglePlay();
+        } else if (e.code === 'ArrowLeft') {
+          e.preventDefault();
+          seekRelative(-5);
+        } else if (e.code === 'ArrowRight') {
+          e.preventDefault();
+          seekRelative(5);
+        } else if (e.key === 'm' || e.key === 'M') {
+          e.preventDefault();
+          toggleMute();
+        } else if (e.key === 'Escape' && fixedPlayerModal && !fixedPlayerModal.classList.contains('hidden')) {
           closePlayerModal();
         }
       });
-
-      /**
-       * Suno 원본 페이지 새 탭에서 열기
-       */
-      function openSunoDirect() {
-        if (!currentSongId) return;
-        const targetUrl = `https://suno.com/song/${currentSongId}`;
-        window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      }
 
       /**
        * 2. 사용자 입력 처리 및 Song ID 추출 (UUID 8-4-4-4-12 또는 32자리 헥사코드)
