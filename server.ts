@@ -40,6 +40,7 @@ interface SongDetails {
   tags: string;
   imageUrl: string;
   audioUrl: string;
+  audioStreamUrl: string;
 }
 
 // In-memory cache to ensure instant (<5ms) responses for social media crawler bots
@@ -144,7 +145,39 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
     }
   }
 
-  // 8. Official Suno oEmbed API fallback for title if still missing
+  // 8. Suno embed page check for title, cover image, and m4a/mp4 stream
+  if (!title || !audioUrl) {
+    try {
+      const embedRes = await fetch(`https://suno.com/embed/${normalizedId}`, {
+        headers: userAgentHeaders,
+      });
+      if (embedRes.ok) {
+        const embedHtml = await embedRes.text();
+        if (!title) {
+          const ogTitleMatch = embedHtml.match(/<meta\s+property=["\\]*og:title["\\]*\s+content=["\\]*([^"\\]+)["\\]*/i);
+          if (ogTitleMatch) {
+            title = ogTitleMatch[1]
+              .replace(/&quot;/g, '"')
+              .replace(/&amp;/g, '&')
+              .replace(/&lt;/g, '<')
+              .replace(/&gt;/g, '>')
+              .replace(/\|\s*Full Track/i, '')
+              .trim();
+          }
+        }
+        if (!imageUrl || imageUrl.includes('image_large_')) {
+          const imgMatch = embedHtml.match(/https:\/\/cdn2\.suno\.ai\/[^"'\s\\]+\.jpeg/);
+          if (imgMatch) imageUrl = imgMatch[0];
+        }
+        const m4aMatch = embedHtml.match(/https:\/\/[^"'\s\\]+cloudfront\.net\/[^"'\s\\]+\.m4a/);
+        if (m4aMatch) audioUrl = m4aMatch[0];
+      }
+    } catch (e) {
+      console.warn("Embed page fallback failed:", e);
+    }
+  }
+
+  // 9. Official Suno oEmbed API fallback for title if still missing
   if (!title) {
     try {
       const oembedRes = await fetch(
@@ -162,8 +195,10 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
   }
 
   if (!audioUrl) {
-    audioUrl = `https://cdn1.suno.ai/${normalizedId}.mp3`;
+    audioUrl = `https://d2lwuy8qc234o3.cloudfront.net/1/clip/${normalizedId}.m4a`;
   }
+
+  const audioStreamUrl = `/api/audio-stream?id=${normalizedId}`;
 
   const result: SongDetails = {
     songId: normalizedId,
@@ -173,6 +208,7 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
     tags: tags || "",
     imageUrl,
     audioUrl,
+    audioStreamUrl,
   };
 
   songDetailsCache.set(normalizedId, result);
@@ -387,6 +423,108 @@ async function startServer() {
         success: false,
         error: err.message || "Suno 링크 분석 중 오류가 발생했습니다.",
       });
+    }
+  });
+
+  // Streaming audio proxy endpoint (Supports HTTP 206 Partial Content / Range requests)
+  app.get("/api/audio-stream", async (req, res) => {
+    try {
+      const songId = ((req.query.id as string) || "").trim().toLowerCase();
+      if (!songId || !uuidRegex.test(songId)) {
+        return res.status(400).send("유효하지 않은 곡 식별자입니다.");
+      }
+
+      // Candidate URLs for audio stream in order of reliability
+      const cached = songDetailsCache.get(songId);
+      const candidates: string[] = [];
+      if (cached?.audioUrl && !cached.audioUrl.includes("cdn1.suno.ai")) {
+        candidates.push(cached.audioUrl);
+      }
+      candidates.push(`https://d2lwuy8qc234o3.cloudfront.net/1/clip/${songId}.m4a`);
+      candidates.push(`https://audiocdn.suno.ai/${songId}.m4a`);
+      candidates.push(`https://cdn2.suno.ai/${songId}.mp3`);
+      candidates.push(`https://cdn2.suno.ai/${songId}.m4a`);
+
+      // Filter duplicates
+      const uniqueCandidates = Array.from(new Set(candidates));
+
+      const headers: Record<string, string> = {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        Referer: "https://suno.com/",
+        Origin: "https://suno.com",
+      };
+
+      if (req.headers.range) {
+        headers["Range"] = req.headers.range;
+      }
+
+      let upstreamRes: Response | null = null;
+      let workingUrl = "";
+
+      for (const targetUrl of uniqueCandidates) {
+        try {
+          const resp = await fetch(targetUrl, { headers });
+          if (resp.ok || resp.status === 206) {
+            upstreamRes = resp;
+            workingUrl = targetUrl;
+            break;
+          }
+        } catch (fetchErr) {
+          console.warn(`Attempt failed for ${targetUrl}:`, fetchErr);
+        }
+      }
+
+      // If all static candidates fail, try fetching song details dynamically to extract the active stream URL
+      if (!upstreamRes) {
+        try {
+          const details = await getSongDetails(songId);
+          if (details.audioUrl && !uniqueCandidates.includes(details.audioUrl)) {
+            const resp = await fetch(details.audioUrl, { headers });
+            if (resp.ok || resp.status === 206) {
+              upstreamRes = resp;
+              workingUrl = details.audioUrl;
+            }
+          }
+        } catch (e) {
+          console.warn("Dynamic song details audio recovery failed:", e);
+        }
+      }
+
+      if (!upstreamRes || (!upstreamRes.ok && upstreamRes.status !== 206)) {
+        console.warn(`Upstream audio fetch completely failed for ${songId}`);
+        return res.status(502).send("음원 스트림을 불러올 수 없습니다.");
+      }
+
+      // Forward status code (200 or 206)
+      res.status(upstreamRes.status);
+
+      const contentType =
+        upstreamRes.headers.get("content-type") ||
+        (workingUrl.endsWith(".mp3") ? "audio/mpeg" : "audio/mp4");
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Accept-Ranges", "bytes");
+
+      const contentRange = upstreamRes.headers.get("content-range");
+      if (contentRange) res.setHeader("Content-Range", contentRange);
+
+      const contentLength = upstreamRes.headers.get("content-length");
+      if (contentLength) res.setHeader("Content-Length", contentLength);
+
+      res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400");
+
+      if (upstreamRes.body) {
+        const { Readable } = await import("stream");
+        // @ts-ignore
+        Readable.fromWeb(upstreamRes.body).pipe(res);
+      } else {
+        res.end();
+      }
+    } catch (err: any) {
+      console.error("Audio streaming error:", err);
+      if (!res.headersSent) {
+        res.status(500).send("스트리밍 프록시 오류 발생");
+      }
     }
   });
 
