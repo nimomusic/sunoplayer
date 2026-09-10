@@ -136,9 +136,11 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
     // 7. Extract direct audio stream if available
     const audioMatches =
       html.match(/https:\/\/[^"'\s\\]+cloudfront\.net\/[^"'\s\\]+\.m4a/g) ||
-      html.match(/https:\/\/[^"'\s\\]+\.(?:m4a|mp3)/g);
+      html.match(/https:\/\/[^"'\s\\]+\.(?:m4a|mp4)/g);
     if (audioMatches) {
-      const validAudio = audioMatches.find((a) => !a.includes("sil-100.mp3"));
+      const validAudio = audioMatches.find(
+        (a) => !a.includes("sil-100") && (a.includes(normalizedId) || a.includes("cloudfront") || a.includes("suno"))
+      );
       if (validAudio) {
         audioUrl = validAudio;
       }
@@ -150,6 +152,7 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
     try {
       const embedRes = await fetch(`https://suno.com/embed/${normalizedId}`, {
         headers: userAgentHeaders,
+        signal: AbortSignal.timeout(4000),
       });
       if (embedRes.ok) {
         const embedHtml = await embedRes.text();
@@ -169,7 +172,9 @@ async function getSongDetails(songId: string, preloadedHtml?: string): Promise<S
           const imgMatch = embedHtml.match(/https:\/\/cdn2\.suno\.ai\/[^"'\s\\]+\.jpeg/);
           if (imgMatch) imageUrl = imgMatch[0];
         }
-        const m4aMatch = embedHtml.match(/https:\/\/[^"'\s\\]+cloudfront\.net\/[^"'\s\\]+\.m4a/);
+        const m4aMatch =
+          embedHtml.match(/https:\/\/[^"'\s\\]+cloudfront\.net\/[^"'\s\\]+\.m4a/) ||
+          embedHtml.match(/https:\/\/[^"'\s\\]+\.(?:m4a|mp4)/);
         if (m4aMatch) audioUrl = m4aMatch[0];
       }
     } catch (e) {
@@ -426,6 +431,9 @@ async function startServer() {
     }
   });
 
+  // In-memory cache for confirmed working CloudFront stream URLs per song
+  const workingAudioUrlCache = new Map<string, string>();
+
   // Streaming audio proxy endpoint (Supports HTTP 206 Partial Content / Range requests)
   app.get("/api/audio-stream", async (req, res) => {
     try {
@@ -433,20 +441,6 @@ async function startServer() {
       if (!songId || !uuidRegex.test(songId)) {
         return res.status(400).send("유효하지 않은 곡 식별자입니다.");
       }
-
-      // Candidate URLs for audio stream in order of reliability
-      const cached = songDetailsCache.get(songId);
-      const candidates: string[] = [];
-      if (cached?.audioUrl && !cached.audioUrl.includes("cdn1.suno.ai")) {
-        candidates.push(cached.audioUrl);
-      }
-      candidates.push(`https://d2lwuy8qc234o3.cloudfront.net/1/clip/${songId}.m4a`);
-      candidates.push(`https://audiocdn.suno.ai/${songId}.m4a`);
-      candidates.push(`https://cdn2.suno.ai/${songId}.mp3`);
-      candidates.push(`https://cdn2.suno.ai/${songId}.m4a`);
-
-      // Filter duplicates
-      const uniqueCandidates = Array.from(new Set(candidates));
 
       const headers: Record<string, string> = {
         "User-Agent":
@@ -462,32 +456,86 @@ async function startServer() {
       let upstreamRes: Response | null = null;
       let workingUrl = "";
 
-      for (const targetUrl of uniqueCandidates) {
+      // 1. Fast path: If we already know the verified CloudFront URL for this song, try it first
+      const knownWorkingUrl = workingAudioUrlCache.get(songId);
+      if (knownWorkingUrl) {
         try {
-          const resp = await fetch(targetUrl, { headers });
-          if (resp.ok || resp.status === 206) {
-            upstreamRes = resp;
-            workingUrl = targetUrl;
-            break;
+          const quickResp = await fetch(knownWorkingUrl, {
+            headers,
+            signal: AbortSignal.timeout(3000),
+          });
+          if (quickResp.ok || quickResp.status === 206) {
+            upstreamRes = quickResp;
+            workingUrl = knownWorkingUrl;
           }
-        } catch (fetchErr) {
-          console.warn(`Attempt failed for ${targetUrl}:`, fetchErr);
+        } catch (e) {
+          workingAudioUrlCache.delete(songId);
         }
       }
 
-      // If all static candidates fail, try fetching song details dynamically to extract the active stream URL
+      // 2. Parallel probe across verified CloudFront endpoints (No cdn1.suno.ai - deprecated/blocked by Suno update)
+      if (!upstreamRes) {
+        const cachedMeta = songDetailsCache.get(songId);
+        const candidates: string[] = [];
+
+        if (
+          cachedMeta?.audioUrl &&
+          cachedMeta.audioUrl.includes("cloudfront.net") &&
+          !cachedMeta.audioUrl.includes("sil-100")
+        ) {
+          candidates.push(cachedMeta.audioUrl);
+        }
+
+        // Suno official CloudFront distribution endpoints for high-quality M4A streams
+        candidates.push(`https://d2lwuy8qc234o3.cloudfront.net/1/clip/${songId}.m4a`);
+        candidates.push(`https://d2lwuy8qc234o3.cloudfront.net/2/clip/${songId}.m4a`);
+
+        const uniqueCandidates = Array.from(new Set(candidates));
+
+        // Race in parallel so whichever endpoint is active responds in <100ms without sequential blocking
+        try {
+          const probePromises = uniqueCandidates.map((targetUrl) =>
+            fetch(targetUrl, {
+              headers,
+              signal: AbortSignal.timeout(3000),
+            }).then((resp) => {
+              if (resp.ok || resp.status === 206) {
+                return { resp, targetUrl };
+              }
+              throw new Error(`Endpoint returned status ${resp.status}`);
+            })
+          );
+
+          const winner = await Promise.any(probePromises);
+          upstreamRes = winner.resp;
+          workingUrl = winner.targetUrl;
+          workingAudioUrlCache.set(songId, workingUrl);
+        } catch (raceErr) {
+          console.warn(`Parallel CloudFront probe failed for ${songId}:`, raceErr);
+        }
+      }
+
+      // 3. Fallback: Dynamic embed inspection if static CloudFront endpoints failed
       if (!upstreamRes) {
         try {
           const details = await getSongDetails(songId);
-          if (details.audioUrl && !uniqueCandidates.includes(details.audioUrl)) {
-            const resp = await fetch(details.audioUrl, { headers });
+          if (
+            details.audioUrl &&
+            details.audioUrl.includes("cloudfront.net") &&
+            details.audioUrl !== workingUrl
+          ) {
+            const resp = await fetch(details.audioUrl, {
+              headers,
+              signal: AbortSignal.timeout(3500),
+            });
             if (resp.ok || resp.status === 206) {
               upstreamRes = resp;
               workingUrl = details.audioUrl;
+              workingAudioUrlCache.set(songId, workingUrl);
             }
           }
         } catch (e) {
-          console.warn("Dynamic song details audio recovery failed:", e);
+          console.warn("Dynamic song embed audio recovery failed:", e);
         }
       }
 
@@ -499,9 +547,23 @@ async function startServer() {
       // Forward status code (200 or 206)
       res.status(upstreamRes.status);
 
-      const contentType =
-        upstreamRes.headers.get("content-type") ||
-        (workingUrl.endsWith(".mp3") ? "audio/mpeg" : "audio/mp4");
+      // CRITICAL: Force audio/mp4 MIME type.
+      // CloudFront returns 'application/octet-stream' which causes browser HTML5 <audio>
+      // elements to fail with MEDIA_ERR_SRC_NOT_SUPPORTED.
+      let contentType = "audio/mp4";
+      if (workingUrl.endsWith(".mp3")) {
+        contentType = "audio/mpeg";
+      } else if (workingUrl.endsWith(".m4a") || workingUrl.endsWith(".mp4")) {
+        contentType = "audio/mp4";
+      } else {
+        const upstreamType = (upstreamRes.headers.get("content-type") || "").toLowerCase();
+        if (upstreamType.includes("mpeg") || upstreamType.includes("mp3")) {
+          contentType = "audio/mpeg";
+        } else {
+          contentType = "audio/mp4";
+        }
+      }
+
       res.setHeader("Content-Type", contentType);
       res.setHeader("Accept-Ranges", "bytes");
 
@@ -516,7 +578,13 @@ async function startServer() {
       if (upstreamRes.body) {
         const { Readable } = await import("stream");
         // @ts-ignore
-        Readable.fromWeb(upstreamRes.body).pipe(res);
+        const nodeStream = Readable.fromWeb(upstreamRes.body);
+        nodeStream.pipe(res);
+        res.on("close", () => {
+          try {
+            nodeStream.destroy();
+          } catch (e) {}
+        });
       } else {
         res.end();
       }
