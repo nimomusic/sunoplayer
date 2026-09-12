@@ -46,6 +46,24 @@
     <!-- Pretendard WebFont -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
+    <!-- 글로벌 iframe 로드 핸들러 사전 정의 (ReferenceError 방지) -->
+    <script>
+      function handleModalIframeLoad(element) {
+        try {
+          const iframe = element || document.getElementById('modal-suno-iframe') || document.getElementById('main-suno-iframe');
+          if (iframe && iframe.src && !iframe.src.endsWith('about:blank')) {
+            const statusText = document.getElementById('popup-status-text');
+            if (statusText) {
+              statusText.textContent = 'Suno 정식 플레이어로 재생 중';
+            }
+          }
+        } catch (e) {
+          console.warn('handleModalIframeLoad:', e);
+        }
+      }
+      window.handleModalIframeLoad = handleModalIframeLoad;
+    </script>
+
     <style>
       body {
         font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
@@ -483,60 +501,61 @@
             </div>
           </div>
 
-          <!-- Suno 정식 플레이어 임베드 메인 영역 (우측 상단 원본 연결 링크 100% 차단) -->
+          <!-- Suno 플레이어 정보 메인 카드 (기존 리디렉션 오류 해결: 완벽한 곡 정보 표시) -->
           <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-700/80 shadow-2xl flex flex-col items-center">
-            <!-- 플레이어 아이프레임 컨테이너 (고정 475 x 430/450 규격 반응형) -->
-            <div class="relative w-full h-[430px] sm:h-[450px] bg-black overflow-hidden">
-              <iframe
-                id="main-suno-iframe"
-                src=""
-                class="w-full h-full border-0 block bg-black"
-                allow="autoplay; encrypted-media; fullscreen"
-                referrerpolicy="no-referrer"
-              ></iframe>
-
-              <!-- 1. 우측 상단 원본 연결 링크(Go to song) 완벽 차단 오버레이 -->
-              <div
-                class="absolute top-0 right-0 w-24 h-16 z-30 cursor-default bg-transparent select-none"
-                onclick="event.preventDefault(); event.stopPropagation(); return false;"
-                ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
-                oncontextmenu="event.preventDefault(); event.stopPropagation(); return false;"
-                title=""
-              ></div>
-
-              <!-- 우측 상단 버튼 자리를 자연스럽고 깔끔하게 가려주는 보호 배지 -->
-              <div
-                class="absolute top-3 right-3 z-30 px-2.5 py-1 rounded-lg bg-slate-950/90 border border-slate-700/80 text-rose-400 text-[11px] font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm pointer-events-auto select-none cursor-default"
-                onclick="event.preventDefault(); event.stopPropagation(); return false;"
-                ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
-              >
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]"></span>
-                <span>정식 플레이어</span>
+            <!-- 곡 정보 및 플레이어 프리뷰 컨테이너 (475x495 규격 매칭) -->
+            <div id="player-pc-window-container" class="relative w-full h-[450px] sm:h-[480px] p-6 sm:px-8 bg-slate-950/95 flex flex-col items-center justify-center text-center select-none">
+              <!-- 앨범 커버 이미지 -->
+              <div class="relative w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 mb-3.5 bg-slate-900 shrink-0 group">
+                <img
+                  id="pc-player-cover"
+                  src="https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg"
+                  alt="Song Cover"
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onerror="this.src='https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg'"
+                />
+                <!-- 커버 위 오버레이 중앙 재생 버튼 -->
+                <button
+                  id="pc-player-play-btn"
+                  type="button"
+                  onclick="handlePlayButtonClick()"
+                  class="absolute inset-0 m-auto w-14 h-14 rounded-full bg-rose-600/90 hover:bg-rose-500 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm transition-all transform hover:scale-110 active:scale-95 cursor-pointer opacity-90 group-hover:opacity-100"
+                  title="Suno 정식 플레이어로 재생"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current ml-0.5 text-white" viewBox="0 0 24 24">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                </button>
               </div>
 
-              <!-- 2. 곡 제목 상단 링크 클릭 차단 (Suno 원본 곡 페이지 이동 방지) -->
-              <div
-                class="absolute top-0 left-28 right-24 h-14 z-20 cursor-default bg-transparent select-none"
-                onclick="event.preventDefault(); event.stopPropagation(); return false;"
-                ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
-                title=""
-              ></div>
+              <!-- 곡 제목 -->
+              <h3 id="pc-player-title" class="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight truncate max-w-full px-2">
+                곡 정보 불러오는 중...
+              </h3>
 
-              <!-- 3. 하단 로고 클릭 차단 -->
-              <div
-                class="absolute bottom-0 right-0 w-28 h-12 z-20 cursor-default bg-transparent select-none"
-                onclick="event.preventDefault(); event.stopPropagation(); return false;"
-                ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
-                title=""
-              ></div>
+              <!-- 아티스트 및 핸들 -->
+              <p id="pc-player-artist-line" class="text-xs sm:text-sm text-slate-400 mb-2.5 flex items-center justify-center gap-1.5 flex-wrap">
+                by <span id="pc-player-artist" class="text-rose-400 font-semibold">Coconut Music</span> <span id="pc-player-handle" class="text-slate-400 font-normal">@coconut_music</span>
+              </p>
+
+              <!-- 태그 목록 -->
+              <div id="pc-player-tags" class="flex flex-wrap items-center justify-center gap-1.5 mb-3 max-w-xs">
+                <!-- 동적 태그 주입 -->
+              </div>
+
+              <!-- 상태 안내 배지 -->
+              <div class="flex items-center justify-center gap-2 text-xs text-emerald-400 font-medium select-none">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]"></span>
+                <span id="pc-player-status-text">음원 준비 완료</span>
+              </div>
             </div>
 
-            <!-- 플레이어 하단 바 (새 창으로 열기 475x495 및 상태 표시) -->
-            <div class="w-full p-3.5 bg-slate-900/95 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <!-- 플레이어 하단 바 (상태 안내) -->
+            <div id="player-bottom-bar" class="w-full p-3 bg-slate-900/95 border-t border-slate-800/80 flex items-center justify-center">
               <div class="flex items-center gap-2 text-xs text-slate-400">
                 <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
                   <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span id="popup-status-text">Suno 정식 플레이어로 재생 중</span>
+                  <span id="popup-status-text">Suno 정식 플레이어로 감상</span>
                 </span>
               </div>
             </div>
@@ -632,6 +651,7 @@
             class="w-full h-full border-0 block bg-black"
             allow="autoplay; encrypted-media; fullscreen"
             referrerpolicy="no-referrer"
+            onload="handleModalIframeLoad(this)"
           ></iframe>
 
           <!-- 1. 우측 상단 원본 연결 링크(Go to song) 완벽 차단 오버레이 -->
@@ -990,6 +1010,7 @@
 
       /**
        * Suno 정식 플레이어 475x495 독립 윈도우 팝업 열기 (window.open)
+       * 첨부 이미지의 붉은색 박스 크기(475x495)에 맞춰 팝업창 생성
        * 브라우저 팝업 차단 발생 시 인앱 고정 모달로 자동 폴백
        */
       function openPlayerWindow(songId) {
@@ -1002,26 +1023,98 @@
           return;
         }
 
-        // PC 데스크톱 환경: 475x495 고정 규격 윈도우 팝업 (window.open)
-        const popupUrl = `/player?id=${encodeURIComponent(targetId)}`;
+        // PC 데스크톱 환경: 첨부 이미지 붉은색 박스 규격인 475x495 독립 윈도우 팝업 (window.open)
+        const width = 475;
+        const height = 495;
+
+        // 첨부 이미지의 붉은색 박스(player-pc-window-container)의 스크린 상 좌표 정밀 계산
+        const cardEl = document.getElementById('player-pc-window-container') || document.getElementById('popup-player-card');
+
+        // 현재 브라우저 윈도우의 스크린 기준 위치 (듀얼 모니터 및 다중 창 완벽 지원)
+        const screenX = typeof window.screenLeft !== 'undefined' ? window.screenLeft : (window.screenX || 0);
+        const screenY = typeof window.screenTop !== 'undefined' ? window.screenTop : (window.screenY || 0);
+
+        let left = 0;
+        let top = 0;
+
+        if (cardEl && cardEl.offsetParent !== null) {
+          const rect = cardEl.getBoundingClientRect();
+          // 브라우저 탭, 주소창, 툴바 등 상단 UI 높이 오프셋
+          const chromeTop = Math.max(0, (window.outerHeight - window.innerHeight) || 80);
+          const chromeLeft = Math.max(0, Math.round((window.outerWidth - window.innerWidth) / 2) || 0);
+
+          // 붉은색 박스 영역의 정중앙에 팝업창 중심이 정확히 포개지도록 계산
+          left = Math.round(screenX + chromeLeft + rect.left + (rect.width - width) / 2);
+          top = Math.round(screenY + chromeTop + rect.top + (rect.height - height) / 2);
+        } else {
+          // 카드가 없을 경우 현재 브라우저 창의 정중앙에 배치
+          left = Math.round(screenX + (window.outerWidth - width) / 2);
+          top = Math.round(screenY + (window.outerHeight - height) / 2);
+        }
+
+        // 모니터 가용 화면 경계(작업 표시줄 등) 벗어남 방지
+        const availWidth = (window.screen && window.screen.availWidth) || 1920;
+        const availHeight = (window.screen && window.screen.availHeight) || 1080;
+        left = Math.max(10, Math.min(left, availWidth - width - 10));
+        top = Math.max(10, Math.min(top, availHeight - height - 10));
+
+        const popupUrl = `https://suno.com/embed/${encodeURIComponent(targetId)}`;
         const windowName = `suno_popup_${targetId.replace(/[^a-zA-Z0-9]/g, '_')}`;
-        const windowFeatures = 'width=475,height=495,left=200,top=150,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no';
+        const windowFeatures = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no`;
 
         try {
           const popup = window.open(popupUrl, windowName, windowFeatures);
           if (!popup || popup.closed || typeof popup.closed === 'undefined') {
             // 브라우저에 의해 팝업이 차단된 경우 모달로 폴백
+            console.warn('Popup blocked by browser, falling back to modal');
             openPlayerModal();
           } else {
             activeMiniPlayerPopup = popup;
             try {
+              // 팝업창을 대상 카드 위치로 강제 이동 및 크기 동기화
+              popup.moveTo(left, top);
+              popup.resizeTo(width, height);
               popup.focus();
             } catch (e) {}
+
+            const statusText = document.getElementById('pc-player-status-text');
+            if (statusText) {
+              statusText.textContent = '팝업 플레이어로 재생 중';
+            }
+            const popupStatusText = document.getElementById('popup-status-text');
+            if (popupStatusText) {
+              popupStatusText.textContent = 'Suno 정식 플레이어로 재생 중';
+            }
           }
         } catch (e) {
+          console.warn('openPlayerWindow failed:', e);
           openPlayerModal();
         }
       }
+      window.openPlayerWindow = openPlayerWindow;
+
+      /**
+       * 플레이 버튼 클릭 핸들러 (PC vs 모바일 분기)
+       * PC 웹 브라우저: iframe을 사용하지 않고 붉은색 박스 크기(475x495)의 별도 윈도우 팝업창을 열어서 재생
+       * 모바일 환경: 모바일 인앱 모달로 재생
+       */
+      function handlePlayButtonClick() {
+        const targetId = currentSongId;
+        if (!targetId) return;
+
+        if (isMobileDevice()) {
+          openPlayerModal();
+        } else {
+          // PC 웹 브라우저: 붉은색 박스 규격(475x495)의 별도 윈도우 팝업창 열기
+          openPlayerWindow(targetId);
+
+          const statusText = document.getElementById('pc-player-status-text');
+          if (statusText) {
+            statusText.textContent = '팝업 플레이어로 재생 중';
+          }
+        }
+      }
+      window.handlePlayButtonClick = handlePlayButtonClick;
 
       /**
        * 플레이어 감상 모드 UI 활성화
@@ -1031,19 +1124,16 @@
         modeGenerator.classList.add('hidden');
         modePlayer.classList.remove('hidden');
 
-        // 메인 아이프레임 및 모달 아이프레임에 Suno 정식 임베드 URL 연결
-        const embedUrl = `https://suno.com/embed/${encodeURIComponent(songId)}`;
-        const mainIframe = document.getElementById('main-suno-iframe');
+        const popupStatusText = document.getElementById('popup-status-text');
+        if (popupStatusText) {
+          popupStatusText.textContent = 'Suno 정식 플레이어로 감상';
+        }
+
         const modalIframe = document.getElementById('modal-suno-iframe');
-
-        if (mainIframe && (!mainIframe.src || !mainIframe.src.includes(songId))) {
-          mainIframe.src = embedUrl;
-        }
         if (modalIframe && (!modalIframe.src || !modalIframe.src.includes(songId))) {
-          modalIframe.src = embedUrl;
+          modalIframe.src = `https://suno.com/embed/${encodeURIComponent(songId)}`;
         }
 
-        // 메타데이터 비동기 로드 및 타이틀/OG태그 업데이트
         let meta = songDataCache[songId];
         if (!meta) {
           try {
@@ -1061,6 +1151,41 @@
         if (meta) {
           const actualTitle = meta.title || `Suno Track (${songId.slice(0, 8)})`;
           const actualArtist = meta.artist || 'Suno Creator';
+          const actualImg = meta.imageUrl || `https://cdn2.suno.ai/image_large_${songId}.jpeg`;
+
+          const pcCover = document.getElementById('pc-player-cover');
+          const pcTitle = document.getElementById('pc-player-title');
+          const pcArtist = document.getElementById('pc-player-artist');
+          const pcHandle = document.getElementById('pc-player-handle');
+          const pcTags = document.getElementById('pc-player-tags');
+
+          if (pcCover) pcCover.src = actualImg;
+          if (pcTitle) pcTitle.textContent = actualTitle;
+          if (pcArtist) pcArtist.textContent = actualArtist;
+
+          if (pcHandle) {
+            if (meta.handle) {
+              pcHandle.textContent = `@${meta.handle.replace(/^@/, '')}`;
+              pcHandle.style.display = 'inline';
+            } else {
+              pcHandle.style.display = 'none';
+            }
+          }
+
+          if (pcTags) {
+            pcTags.innerHTML = '';
+            const rawTags = (meta.tags || '').trim();
+            const tagList = rawTags
+              ? rawTags.split(/[,#\s]+/).map(t => t.trim()).filter(Boolean).slice(0, 4)
+              : ['hip-hop', 'lo-fi', 'melodic'];
+            tagList.forEach(t => {
+              const span = document.createElement('span');
+              span.className = 'px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700/70 text-slate-300 text-[11px] font-medium';
+              span.textContent = `#${t}`;
+              pcTags.appendChild(span);
+            });
+          }
+
           document.title = `${actualTitle} - ${actualArtist} | Suno 즉석 플레이어`;
           updateClientMetaTags(meta);
         } else {
@@ -1127,11 +1252,36 @@
           return;
         }
 
+        const modalIframe = document.getElementById('modal-suno-iframe');
+        const embedUrl = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
+        if (modalIframe && (!modalIframe.src || !modalIframe.src.includes(currentSongId))) {
+          modalIframe.src = embedUrl;
+        }
+
         if (fixedPlayerModal) {
           fixedPlayerModal.classList.remove('hidden');
           fixedPlayerModal.classList.add('flex');
         }
       }
+
+      /**
+       * 모달 / 메인 Suno 플레이어 iframe 로드 완료 이벤트 핸들러
+       */
+      function handleModalIframeLoad(element) {
+        try {
+          const iframe = element || document.getElementById('modal-suno-iframe') || document.getElementById('main-suno-iframe');
+          if (iframe && iframe.src && !iframe.src.endsWith('about:blank')) {
+            const statusBadge = document.getElementById('popup-status-badge');
+            const statusText = document.getElementById('popup-status-text');
+            if (statusText) {
+              statusText.textContent = 'Suno 정식 플레이어로 재생 중';
+            }
+          }
+        } catch (err) {
+          console.warn('handleModalIframeLoad error:', err);
+        }
+      }
+      window.handleModalIframeLoad = handleModalIframeLoad;
 
       /**
        * 플레이어 모달 닫기
@@ -1414,7 +1564,6 @@
         const localTargetUrl = `${window.location.origin}${window.location.pathname}${urlParams}`;
         window.history.pushState({ songId: currentSongId }, '', localTargetUrl);
         renderPlayerMode(currentSongId);
-        openPlayerWindow(currentSongId);
       }
 
       function switchToGeneratorMode() {
