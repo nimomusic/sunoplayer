@@ -447,6 +447,11 @@
                 </button>
               </div>
 
+              <p class="text-[11px] text-slate-400 flex items-center justify-center gap-1.5 pt-0.5 text-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                <span>생성된 공유 링크는 스마트폰(모바일) 환경에 최적화되어 있습니다.</span>
+              </p>
+
               <!-- 원클릭 플레이어 바로가기 -->
               <div class="pt-1">
                 <button
@@ -503,8 +508,24 @@
 
           <!-- Suno 플레이어 정보 메인 카드 (기존 리디렉션 오류 해결: 완벽한 곡 정보 표시) -->
           <div id="popup-player-card" class="relative w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-700/80 shadow-2xl flex flex-col items-center">
+            
+            <!-- [PC 전용 상단 안내 배너: PC 웹 브라우저 접속 시 상단에 표시] -->
+            <div id="pc-notice-banner" class="hidden w-full bg-amber-500/10 border-b border-amber-500/30 p-3 sm:p-4 text-center">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold mb-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+                  <path d="M12 18h.01"></path>
+                </svg>
+                <span>모바일(스마트폰) 환경 전용 안내</span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                본 플레이어는 <strong class="text-amber-300 font-semibold">스마트폰(모바일)</strong> 환경에서만 감상 가능합니다.<br/>
+                <span class="text-slate-400 text-xs">PC 웹 브라우저는 Suno 보안 및 리디렉션 정책으로 인해 재생이 지원되지 않습니다.</span>
+              </p>
+            </div>
+
             <!-- 곡 정보 및 플레이어 프리뷰 컨테이너 (475x495 규격 매칭) -->
-            <div id="player-pc-window-container" class="relative w-full h-[450px] sm:h-[480px] p-6 sm:px-8 bg-slate-950/95 flex flex-col items-center justify-center text-center select-none">
+            <div id="player-pc-window-container" class="relative w-full min-h-[420px] sm:min-h-[460px] p-6 sm:px-8 bg-slate-950/95 flex flex-col items-center justify-center text-center select-none">
               <!-- 앨범 커버 이미지 -->
               <div class="relative w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/60 mb-3.5 bg-slate-900 shrink-0 group">
                 <img
@@ -514,7 +535,8 @@
                   class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   onerror="this.src='https://raw.githubusercontent.com/nimomusic/sunoplayer/main/pic.jpg'"
                 />
-                <!-- 커버 위 오버레이 중앙 재생 버튼 -->
+                
+                <!-- 모바일 전용: 커버 위 오버레이 중앙 재생 버튼 -->
                 <button
                   id="pc-player-play-btn"
                   type="button"
@@ -526,6 +548,23 @@
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                   </svg>
                 </button>
+
+                <!-- PC 전용: 커버 위 모바일 접속 안내 오버레이 -->
+                <div
+                  id="pc-cover-lock-overlay"
+                  class="hidden absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center cursor-pointer transition-colors hover:bg-slate-950/65"
+                  onclick="handlePlayButtonClick()"
+                  title="스마트폰에서 접속해 주세요"
+                >
+                  <div class="w-11 h-11 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mb-1.5 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+                      <path d="M12 18h.01"></path>
+                    </svg>
+                  </div>
+                  <span class="text-xs font-bold text-white tracking-tight">스마트폰 전용</span>
+                  <span class="text-[10px] text-amber-300 font-medium mt-0.5">PC 재생 불가</span>
+                </div>
               </div>
 
               <!-- 곡 제목 -->
@@ -543,8 +582,45 @@
                 <!-- 동적 태그 주입 -->
               </div>
 
-              <!-- 상태 안내 배지 -->
-              <div class="flex items-center justify-center gap-2 text-xs text-emerald-400 font-medium select-none">
+              <!-- PC 전용: 스마트폰 즉시 접속 섹션 (QR 코드 + 모바일 링크 복사) -->
+              <div id="pc-qr-section" class="hidden w-full max-w-sm mt-1 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col items-center gap-3">
+                <div class="flex items-center gap-3.5 w-full justify-center">
+                  <!-- QR 코드 이미지 -->
+                  <div class="p-1.5 bg-white rounded-lg shadow-md shrink-0">
+                    <img
+                      id="pc-qr-img"
+                      src=""
+                      alt="모바일 접속 QR 코드"
+                      class="w-20 h-20 block rounded"
+                    />
+                  </div>
+                  <div class="text-left flex flex-col justify-center">
+                    <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                      <span>스마트폰 카메라로 스캔</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 leading-snug">
+                      카메라 앱으로 QR을 비추면<br/>모바일 플레이어로 즉시 열립니다.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 모바일 링크 복사 버튼 -->
+                <button
+                  type="button"
+                  onclick="copyMobilePlayerLink()"
+                  class="w-full py-2 px-3.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-slate-200 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700/80 transition-all cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                  </svg>
+                  <span>스마트폰 감상 링크 복사하기</span>
+                </button>
+              </div>
+
+              <!-- 모바일 전용: 상태 안내 배지 -->
+              <div id="mobile-status-container" class="flex items-center justify-center gap-2 text-xs text-emerald-400 font-medium select-none mt-1">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]"></span>
                 <span id="pc-player-status-text">음원 준비 완료</span>
               </div>
@@ -553,8 +629,8 @@
             <!-- 플레이어 하단 바 (상태 안내) -->
             <div id="player-bottom-bar" class="w-full p-3 bg-slate-900/95 border-t border-slate-800/80 flex items-center justify-center">
               <div class="flex items-center gap-2 text-xs text-slate-400">
-                <span id="popup-status-badge" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="popup-status-badge" class="inline-flex items-center gap-1.5 font-medium">
+                  <span id="popup-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span id="popup-status-text">Suno 정식 플레이어로 감상</span>
                 </span>
               </div>
@@ -627,8 +703,20 @@
             <span class="tracking-tight">Suno 고음질 즉석 플레이어</span>
           </div>
 
-          <!-- 우측: 닫기 버튼 -->
+          <!-- 우측: 새 창 보기(비상용) + 닫기 버튼 -->
           <div class="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onclick="openPlayerWindow()"
+              title="외부 팝업창으로 열기 (비상용)"
+              class="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </button>
             <button
               type="button"
               onclick="closePlayerModal()"
@@ -649,8 +737,9 @@
             id="modal-suno-iframe"
             src=""
             class="w-full h-full border-0 block bg-black"
-            allow="autoplay; encrypted-media; fullscreen"
-            referrerpolicy="no-referrer"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen"
+            referrerpolicy="strict-origin-when-cross-origin"
+            loading="eager"
             onload="handleModalIframeLoad(this)"
           ></iframe>
 
@@ -675,7 +764,7 @@
 
           <!-- 2. 곡 제목 상단 링크 클릭 차단 (Suno 원본 곡 페이지 이동 방지) -->
           <div
-            class="absolute top-0 left-28 right-24 h-14 z-20 cursor-default bg-transparent select-none"
+            class="absolute top-0 left-0 right-24 h-14 z-20 cursor-default bg-transparent select-none"
             onclick="event.preventDefault(); event.stopPropagation(); return false;"
             ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
             title=""
@@ -683,7 +772,7 @@
 
           <!-- 3. 하단 로고 클릭 차단 -->
           <div
-            class="absolute bottom-0 right-0 w-28 h-12 z-20 cursor-default bg-transparent select-none"
+            class="absolute bottom-0 right-0 w-32 h-14 z-20 cursor-default bg-transparent select-none"
             onclick="event.preventDefault(); event.stopPropagation(); return false;"
             ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
             title=""
@@ -1095,8 +1184,8 @@
 
       /**
        * 플레이 버튼 클릭 핸들러 (PC vs 모바일 분기)
-       * PC 웹 브라우저: iframe을 사용하지 않고 붉은색 박스 크기(475x495)의 별도 윈도우 팝업창을 열어서 재생
-       * 모바일 환경: 모바일 인앱 모달로 재생
+       * 모바일 환경: 인앱 고정 플레이어 모달 실행
+       * PC 웹 브라우저: 사용 불가 안내 및 스마트폰 접속 가이드 강조
        */
       function handlePlayButtonClick() {
         const targetId = currentSongId;
@@ -1105,16 +1194,76 @@
         if (isMobileDevice()) {
           openPlayerModal();
         } else {
-          // PC 웹 브라우저: 붉은색 박스 규격(475x495)의 별도 윈도우 팝업창 열기
-          openPlayerWindow(targetId);
-
-          const statusText = document.getElementById('pc-player-status-text');
-          if (statusText) {
-            statusText.textContent = '팝업 플레이어로 재생 중';
+          // PC 웹 브라우저: 모바일 환경 전용 안내 토스트 및 QR 섹션 강조
+          showToast('본 플레이어는 스마트폰(모바일) 전용입니다. QR 코드를 스캔하거나 링크를 복사하여 스마트폰에서 접속해 주세요.', 'info');
+          const qrSec = document.getElementById('pc-qr-section');
+          if (qrSec) {
+            qrSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            qrSec.classList.add('ring-2', 'ring-amber-500/70');
+            setTimeout(() => qrSec.classList.remove('ring-2', 'ring-amber-500/70'), 1500);
           }
         }
       }
       window.handlePlayButtonClick = handlePlayButtonClick;
+
+      /**
+       * 스마트폰(모바일) 접속 링크 클립보드 복사
+       */
+      function copyMobilePlayerLink() {
+        const url = window.location.href;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(() => {
+            showToast('스마트폰 감상 링크가 복사되었습니다! 모바일 메신저나 브라우저에 붙여넣어 보세요.', 'success');
+          }).catch(() => fallbackCopy(url));
+        } else {
+          fallbackCopy(url);
+        }
+      }
+      window.copyMobilePlayerLink = copyMobilePlayerLink;
+
+      /**
+       * PC vs 모바일 환경에 맞춘 플레이어 화면 동적 전환
+       */
+      function updateDeviceUI(songId) {
+        const isMobile = isMobileDevice();
+        const pcNoticeBanner = document.getElementById('pc-notice-banner');
+        const pcCoverLock = document.getElementById('pc-cover-lock-overlay');
+        const pcPlayBtn = document.getElementById('pc-player-play-btn');
+        const pcQrSection = document.getElementById('pc-qr-section');
+        const mobileStatus = document.getElementById('mobile-status-container');
+        const popupStatusBadge = document.getElementById('popup-status-badge');
+        const popupStatusDot = document.getElementById('popup-status-dot');
+        const popupStatusText = document.getElementById('popup-status-text');
+
+        if (!isMobile) {
+          // PC 브라우저: 모바일 전용 안내 표시 & QR 코드 주입
+          if (pcNoticeBanner) pcNoticeBanner.classList.remove('hidden');
+          if (pcCoverLock) pcCoverLock.classList.remove('hidden');
+          if (pcPlayBtn) pcPlayBtn.classList.add('hidden');
+          if (pcQrSection) {
+            pcQrSection.classList.remove('hidden');
+            const qrImg = document.getElementById('pc-qr-img');
+            if (qrImg) {
+              const currentUrl = window.location.href;
+              qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(currentUrl)}`;
+            }
+          }
+          if (mobileStatus) mobileStatus.classList.add('hidden');
+          if (popupStatusBadge) popupStatusBadge.className = 'inline-flex items-center gap-1.5 text-amber-400 font-medium';
+          if (popupStatusDot) popupStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+          if (popupStatusText) popupStatusText.textContent = 'PC 웹 브라우저 이용 불가 (스마트폰 접속 필요)';
+        } else {
+          // 모바일 브라우저: 정상 플레이어 모드
+          if (pcNoticeBanner) pcNoticeBanner.classList.add('hidden');
+          if (pcCoverLock) pcCoverLock.classList.add('hidden');
+          if (pcPlayBtn) pcPlayBtn.classList.remove('hidden');
+          if (pcQrSection) pcQrSection.classList.add('hidden');
+          if (mobileStatus) mobileStatus.classList.remove('hidden');
+          if (popupStatusBadge) popupStatusBadge.className = 'inline-flex items-center gap-1.5 text-emerald-400 font-medium';
+          if (popupStatusDot) popupStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+          if (popupStatusText) popupStatusText.textContent = 'Suno 정식 플레이어로 감상';
+        }
+      }
 
       /**
        * 플레이어 감상 모드 UI 활성화
@@ -1124,15 +1273,8 @@
         modeGenerator.classList.add('hidden');
         modePlayer.classList.remove('hidden');
 
-        const popupStatusText = document.getElementById('popup-status-text');
-        if (popupStatusText) {
-          popupStatusText.textContent = 'Suno 정식 플레이어로 감상';
-        }
-
-        const modalIframe = document.getElementById('modal-suno-iframe');
-        if (modalIframe && (!modalIframe.src || !modalIframe.src.includes(songId))) {
-          modalIframe.src = `https://suno.com/embed/${encodeURIComponent(songId)}`;
-        }
+        // 환경별(PC vs 모바일) UI 초기화
+        updateDeviceUI(songId);
 
         let meta = songDataCache[songId];
         if (!meta) {
@@ -1191,20 +1333,31 @@
         } else {
           document.title = `Suno Track (${songId.slice(0, 8)}) | Suno 즉석 플레이어`;
         }
+
+        // 최종 상태 재동기화
+        updateDeviceUI(songId);
       }
 
       /**
-       * 모바일 / 터치 기기 여부 판별
+       * 모바일 / 스마트폰 기기 여부 정밀 판별
+       * 데스크톱 PC 브라우저는 false를 반환함
        */
       function isMobileDevice() {
-        const uaCheck = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const touchCheck = window.matchMedia && (
-          window.matchMedia('(pointer: coarse)').matches ||
-          window.matchMedia('(hover: none)').matches
-        );
-        const touchPoints = navigator.maxTouchPoints > 0;
-        return uaCheck || touchCheck || touchPoints;
+        const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Silk/i.test(ua);
+        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        // 화면 폭이 820px 이하이면서 터치가 가능하거나 모바일 UA인 경우
+        const isSmallScreen = window.innerWidth <= 820;
+        return isMobileUA || (isTouch && isSmallScreen);
       }
+      window.isMobileDevice = isMobileDevice;
+
+      // 창 크기 변경 시 디바이스 UI 실시간 갱신 (예: 개발자도구 모바일 모드 전환 시)
+      window.addEventListener('resize', () => {
+        if (currentSongId) {
+          updateDeviceUI(currentSongId);
+        }
+      });
 
       /**
        * 모바일 환경에서 가로 모드(Landscape) 여부 판별
@@ -1243,7 +1396,7 @@
       /**
        * 인앱 고정 플레이어 모달 열기 (475x495 고정 규격 창)
        */
-      function openPlayerModal() {
+      async function openPlayerModal() {
         if (!currentSongId) return;
 
         if (isLandscapeMode()) {
@@ -1252,15 +1405,29 @@
           return;
         }
 
-        const modalIframe = document.getElementById('modal-suno-iframe');
-        const embedUrl = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
-        if (modalIframe && (!modalIframe.src || !modalIframe.src.includes(currentSongId))) {
-          modalIframe.src = embedUrl;
+        // Chrome PC 타사 저장소/쿠키 권한 요청 시도 (사용자 클릭 제스처 이벤트 시점)
+        try {
+          if (document.requestStorageAccess) {
+            await document.requestStorageAccess();
+          }
+        } catch (e) {
+          // ignore
         }
 
+        // 모달 창 먼저 활성화 (475x495 온전한 레이아웃 치수 확보)
         if (fixedPlayerModal) {
           fixedPlayerModal.classList.remove('hidden');
           fixedPlayerModal.classList.add('flex');
+          document.body.classList.add('overflow-hidden');
+        }
+
+        // 화면에 모달이 배치된 후 iframe src 주입 (0x0 크기 렌더링 충돌 및 리디렉션 방지)
+        const modalIframe = document.getElementById('modal-suno-iframe');
+        const embedUrl = `https://suno.com/embed/${encodeURIComponent(currentSongId)}`;
+        if (modalIframe && (!modalIframe.src || !modalIframe.src.includes(currentSongId))) {
+          setTimeout(() => {
+            modalIframe.src = embedUrl;
+          }, 40);
         }
       }
 
@@ -1290,6 +1457,7 @@
         if (!fixedPlayerModal) return;
         fixedPlayerModal.classList.add('hidden');
         fixedPlayerModal.classList.remove('flex');
+        document.body.classList.remove('overflow-hidden');
       }
 
       function handleModalBackdropClick(event) {
