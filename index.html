@@ -568,7 +568,12 @@
               </div>
 
               <!-- 곡 제목 -->
-              <h3 id="pc-player-title" class="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight truncate max-w-full px-2">
+              <h3
+                id="pc-player-title"
+                onclick="handlePlayButtonClick()"
+                title="플레이어로 감상"
+                class="text-xl sm:text-2xl font-bold text-white mb-1 tracking-tight truncate max-w-full px-2 cursor-pointer hover:text-rose-400 transition-colors"
+              >
                 곡 정보 불러오는 중...
               </h3>
 
@@ -696,27 +701,15 @@
           </div>
 
           <!-- 중앙: 앱 타이틀 배지 -->
-          <div class="flex items-center gap-2 text-xs font-semibold text-slate-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-500 fill-current" viewBox="0 0 24 24">
+          <div class="flex items-center gap-2 text-xs font-semibold text-slate-300 min-w-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-500 fill-current shrink-0" viewBox="0 0 24 24">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
             </svg>
-            <span class="tracking-tight">Suno 고음질 즉석 플레이어</span>
+            <span id="modal-header-title" class="tracking-tight truncate max-w-[210px] sm:max-w-[280px]">Suno 고음질 즉석 플레이어</span>
           </div>
 
-          <!-- 우측: 새 창 보기(비상용) + 닫기 버튼 -->
+          <!-- 우측: 닫기 버튼 (불필요한 외부 팝업 버튼 제거) -->
           <div class="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onclick="openPlayerWindow()"
-              title="외부 팝업창으로 열기 (비상용)"
-              class="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </button>
             <button
               type="button"
               onclick="closePlayerModal()"
@@ -731,7 +724,7 @@
           </div>
         </div>
 
-        <!-- 윈도우 콘텐츠 영역 (고정 규격 475 x 450, Suno 정식 플레이어 임베드 + 우측 상단 원본 연결 링크 100% 차단) -->
+        <!-- 윈도우 콘텐츠 영역 (고정 규격 475 x 450, Suno 정식 플레이어 임베드 + 원본 곡 페이지 이동 100% 원천 차단) -->
         <div class="flex-grow relative overflow-hidden bg-black w-full h-[450px]">
           <iframe
             id="modal-suno-iframe"
@@ -743,38 +736,36 @@
             onload="handleModalIframeLoad(this)"
           ></iframe>
 
-          <!-- 1. 우측 상단 원본 연결 링크(Go to song) 완벽 차단 오버레이 -->
+          <!-- [원천 차단 1]: 상단 전체 영역 (곡 제목, 아티스트, 커버 썸네일, Go to song 링크) 100% 완전 차단 -->
+          <!-- 높이 118px로 모바일 환경에서 곡 제목이나 아티스트 터치 시 원본 Suno 페이지로 이동하는 링크를 완벽 차단 -->
           <div
-            class="absolute top-0 right-0 w-24 h-16 z-30 cursor-default bg-transparent select-none"
+            id="modal-header-shield"
+            class="absolute top-0 inset-x-0 h-[118px] z-30 cursor-default bg-transparent select-none pointer-events-auto"
             onclick="event.preventDefault(); event.stopPropagation(); return false;"
             ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
+            ontouchend="event.preventDefault(); event.stopPropagation(); return false;"
+            onpointerdown="event.preventDefault(); event.stopPropagation(); return false;"
             oncontextmenu="event.preventDefault(); event.stopPropagation(); return false;"
             title=""
           ></div>
 
-          <!-- 우측 상단 보호 배지 -->
+          <!-- 우측 상단 정식 플레이어 배지 (시각적 상태 안내, 터치 통과) -->
           <div
-            class="absolute top-3 right-3 z-30 px-2.5 py-1 rounded-lg bg-slate-950/90 border border-slate-700/80 text-rose-400 text-[11px] font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm pointer-events-auto select-none cursor-default"
-            onclick="event.preventDefault(); event.stopPropagation(); return false;"
-            ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
+            class="absolute top-3 right-3 z-40 px-2.5 py-1 rounded-lg bg-slate-950/90 border border-slate-700/80 text-rose-400 text-[11px] font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm pointer-events-none select-none"
           >
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#10b981]"></span>
             <span>정식 플레이어</span>
           </div>
 
-          <!-- 2. 곡 제목 상단 링크 클릭 차단 (Suno 원본 곡 페이지 이동 방지) -->
+          <!-- [원천 차단 2]: 하단 우측 Suno 로고/링크 클릭 차단 -->
           <div
-            class="absolute top-0 left-0 right-24 h-14 z-20 cursor-default bg-transparent select-none"
+            id="modal-bottom-shield"
+            class="absolute bottom-0 right-0 w-36 h-14 z-30 cursor-default bg-transparent select-none pointer-events-auto"
             onclick="event.preventDefault(); event.stopPropagation(); return false;"
             ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
-            title=""
-          ></div>
-
-          <!-- 3. 하단 로고 클릭 차단 -->
-          <div
-            class="absolute bottom-0 right-0 w-32 h-14 z-20 cursor-default bg-transparent select-none"
-            onclick="event.preventDefault(); event.stopPropagation(); return false;"
-            ontouchstart="event.preventDefault(); event.stopPropagation(); return false;"
+            ontouchend="event.preventDefault(); event.stopPropagation(); return false;"
+            onpointerdown="event.preventDefault(); event.stopPropagation(); return false;"
+            oncontextmenu="event.preventDefault(); event.stopPropagation(); return false;"
             title=""
           ></div>
         </div>
@@ -1276,6 +1267,11 @@
         // 환경별(PC vs 모바일) UI 초기화
         updateDeviceUI(songId);
 
+        // [사용자 요청] 모바일(스마트폰) 환경 접속 시: 별도의 터치 없이 즉시 팝업/모달 플레이어로 직행
+        if (isMobileDevice()) {
+          openPlayerModal();
+        }
+
         let meta = songDataCache[songId];
         if (!meta) {
           try {
@@ -1300,10 +1296,12 @@
           const pcArtist = document.getElementById('pc-player-artist');
           const pcHandle = document.getElementById('pc-player-handle');
           const pcTags = document.getElementById('pc-player-tags');
+          const modalHeaderTitle = document.getElementById('modal-header-title');
 
           if (pcCover) pcCover.src = actualImg;
           if (pcTitle) pcTitle.textContent = actualTitle;
           if (pcArtist) pcArtist.textContent = actualArtist;
+          if (modalHeaderTitle) modalHeaderTitle.textContent = actualTitle;
 
           if (pcHandle) {
             if (meta.handle) {
@@ -1811,7 +1809,34 @@
         } catch (e) {}
       }
 
+      /**
+       * 상단 및 하단 원본 이동 차단 쉴드 이벤트 캡처 초기화
+       * 모바일에서 곡 제목 터치 시 원본 Suno 페이지로 이동하는 것을 100% 원천 차단
+       */
+      function initShields() {
+        const headerShield = document.getElementById('modal-header-shield');
+        const bottomShield = document.getElementById('modal-bottom-shield');
+        const blockEvent = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+          return false;
+        };
+
+        [headerShield, bottomShield].forEach((el) => {
+          if (!el) return;
+          el.addEventListener('click', blockEvent, { capture: true });
+          el.addEventListener('touchstart', blockEvent, { capture: true, passive: false });
+          el.addEventListener('touchend', blockEvent, { capture: true, passive: false });
+          el.addEventListener('touchmove', blockEvent, { capture: true, passive: false });
+          el.addEventListener('pointerdown', blockEvent, { capture: true });
+          el.addEventListener('pointerup', blockEvent, { capture: true });
+          el.addEventListener('contextmenu', blockEvent, { capture: true });
+        });
+      }
+
       // 초기 실행
+      initShields();
       checkOrientationAndLock();
       initRouter();
     </script>
